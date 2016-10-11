@@ -5,6 +5,9 @@ mod code_adapter;
 mod hex;
 pub use self::hex::*;
 
+mod tee;
+pub use self::tee::*;
+
 mod unicode;
 pub use self::unicode::*;
 
@@ -31,8 +34,9 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 5] = [
+const MAP: [(&'static str, CodeFunctions); 6] = [
     entry!("hex" => HexEncode),
+    entry!("tee" => Tee),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("unutf8" => UnUtf8),
