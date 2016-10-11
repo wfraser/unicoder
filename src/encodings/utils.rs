@@ -32,11 +32,9 @@ pub fn read_u32_be(input: &mut InputBox) -> Option<Result<u32, CodeError>> {
 /// Split a 32-bit integer into 4 bytes, big-endian (most-significant byte first).
 pub fn u32_to_u8_be(input: u32) -> Vec<u8> {
     let mut out = Vec::with_capacity(4);
-    for _ in 0..4 {
-        out.push((input >> 24) as u8);
-        out.push((input >> 16) as u8);
-        out.push((input >> 8) as u8);
-        out.push(input as u8);
-    }
+    out.push((input >> 24) as u8);
+    out.push((input >> 16) as u8);
+    out.push((input >> 8) as u8);
+    out.push(input as u8);
     out
 }
