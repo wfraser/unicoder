@@ -35,7 +35,9 @@ impl CodeStatics for HexEncode {
     }
 
     fn print_help() {
-        println!("<hex help>");
+        // TODO: add options for spacing, upper/lowercase, etc.
+        println!("(no options)");
+        println!("Formats input as hexadecimal, 2 digits, space separated.");
     }
 }
 
@@ -71,7 +73,8 @@ impl CodeStatics for HexDecode {
     }
 
     fn print_help() {
-        println!("<unhex help>");
+        println!("(no options)");
+        println!("Parses hexadecimal input into raw data. Ignores whitespace.");
     }
 }
 

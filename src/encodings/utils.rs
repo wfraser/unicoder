@@ -1,5 +1,6 @@
 use super::super::encoding::*;
 
+/// Read 4 bytes from the input, interpret as a big-endian 32-bit integer.
 pub fn read_u32_be(input: &mut InputBox) -> Option<Result<u32, CodeError>> {
     let mut codepoint = 0u32;
     let mut bytes = Vec::with_capacity(4);
@@ -28,6 +29,7 @@ pub fn read_u32_be(input: &mut InputBox) -> Option<Result<u32, CodeError>> {
     Some(Ok(codepoint))
 }
 
+/// Split a 32-bit integer into 4 bytes, big-endian (most-significant byte first).
 pub fn u32_to_u8_be(input: u32) -> Vec<u8> {
     let mut out = Vec::with_capacity(4);
     for _ in 0..4 {

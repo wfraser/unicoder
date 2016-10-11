@@ -14,8 +14,9 @@ impl CodeStatics for Tee {
     }
 
     fn print_help() {
+        // TODO: add options for writing to arbitrary file descriptors or files instead of stdout
         println!("(no options)");
-        println!("copies its input verbatim to standard output");
+        println!("Copies its input verbatim to standard output.");
     }
 }
 

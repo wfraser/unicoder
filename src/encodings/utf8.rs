@@ -14,7 +14,8 @@ impl CodeStatics for Utf8 {
     }
 
     fn print_help() {
-        println!("(no options)")
+        println!("(no options)");
+        println!("Encodes character data (UTF-32BE) as UTF-16");
     }
 }
 

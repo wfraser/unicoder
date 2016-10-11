@@ -16,6 +16,8 @@ impl CodeStatics for UnicodeInfo {
 
     fn print_help() {
         println!("(no options)");
+        println!("Takes character data (UTF-32BE) and displays info about");
+        println!("the Unicode code points.");
     }
 }
 

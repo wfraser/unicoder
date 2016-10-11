@@ -26,6 +26,7 @@ impl CodeStatics for UnUtf8 {
         // have a "relaxed" mode)
         // TODO: add a mode that yields substitution characters instead of errors
         println!("(no options)");
+        println!("Decodes UTF-8 input into character data (UTF-32BE)");
     }
 }
 
