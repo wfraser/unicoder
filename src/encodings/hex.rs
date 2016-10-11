@@ -84,7 +84,7 @@ impl Code for HexDecode {
             match self.input.next() {
                 Some(Ok(byte)) => {
                     let c = byte as char;
-                    let value = if c == ' ' || c == '\t' {
+                    let value = if c == ' ' || c == '\t' || c == '\n' {
                         // skip whitespace
                         continue;
                     } else if c >= '0' && c <= '9' {
