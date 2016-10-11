@@ -83,7 +83,7 @@ impl UnicodeInfo {
     }
 
     fn process_codepoint<W: Write>(codepoint: u32, out: &mut W) { // no result because it can't fail
-        writeln!(out, "U+{:X} ", codepoint).unwrap();
+        writeln!(out, "U+{:04X} ", codepoint).unwrap();
         // TODO: write more info about the code point. Use `ucd` crate.
     }
 }
