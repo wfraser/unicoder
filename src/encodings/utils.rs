@@ -7,7 +7,7 @@ pub fn read_u32_be(input: &mut InputBox) -> Option<Result<u32, CodeError>> {
     for i in 0..4 {
         match input.next() {
             Some(Ok(byte)) => {
-                debug!("UTF-32 byte {:02X}", byte);
+                debug!("UTF-32 byte {}: {:#04X}", i + 1, byte);
                 codepoint |= (byte as u32) << (8 * (3 - i));
                 bytes.push(byte);
             },

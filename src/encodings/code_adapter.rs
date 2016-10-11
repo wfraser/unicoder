@@ -27,7 +27,9 @@ impl Code for Utf32Adapter {
         if self.output_buffer.is_empty() {
             match utils::read_u32_be(&mut self.input) {
                 Some(Ok(codepoint)) => {
+                    debug!("got input: U+{:04x}", codepoint);
                     if let Err(e) = (self.f)(codepoint, &mut self.output_buffer) {
+                        error!("processing function returned error: {}", e);
                         self.stashed_error = Some(e);
                     }
                 },

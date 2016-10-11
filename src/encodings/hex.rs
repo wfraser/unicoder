@@ -13,7 +13,7 @@ impl HexEncode {
     }
 
     fn hex_char(&self, quad: u8) -> u8 {
-        debug!("digit = {:#x}", quad);
+        debug!("digit {:X}", quad);
         assert!(quad < 16);
         if quad < 10 {
             ('0' as u8) + quad
@@ -50,7 +50,7 @@ impl Code for HexEncode {
         match self.input.next() {
             Some(Ok(byte)) => {
                 let (current, next) = self.hex_chars(byte);
-                debug!("current = {:#x}, next = {:#x}", current, next);
+                debug!("{:#x}, {:#x}", current, next);
                 self.output_buffer.push(0x20);
                 self.output_buffer.push(next);
                 Some(Ok(current))
@@ -101,7 +101,7 @@ impl Code for HexDecode {
                         return Some(Err(CodeError::new("out of range")
                                                   .with_bytes([byte].to_vec())));
                     };
-                    debug!("digit: {:x}", value);
+                    debug!("digit {:X}", value);
 
                     if !first {
                         out <<= 4;
