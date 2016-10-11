@@ -116,8 +116,8 @@ fn main() {
                 println!("");
             }
         } else {
-            println!("usage: {} [options] <encodings...>", args[0]);
-            println!("       {} {{--help|-h}}", args[0]);
+            println!("usage: {} [options] <encoding[,option,...]>...]", args[0]);
+            println!("       {} {{--help|-h}} [encoding]", args[0]);
             println!("       {} --list", args[0]);
             println!("options:");
             println!("      -d | --debug        enable stderr debug output logging");
