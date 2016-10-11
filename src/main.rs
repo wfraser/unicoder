@@ -32,14 +32,14 @@ struct DebugOutput {
 impl log::Log for DebugOutput {
     fn enabled(&self, metadata: &log::LogMetadata) -> bool {
         if !self.debug_output {
-            metadata.level() == log::LogLevel::Warn
+            metadata.level() <= log::LogLevel::Warn
         } else {
             true
         }
     }
 
     fn log(&self, record: &log::LogRecord) {
-        if self.debug_output {
+        if self.enabled(record.metadata()) {
             writeln!(io::stdout(), "{}: {}: {}", record.target(), record.level(), record.args()).unwrap();
         }
     }
