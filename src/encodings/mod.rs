@@ -6,8 +6,8 @@ pub use self::hex::*;
 mod unicode;
 pub use self::unicode::*;
 
-mod utf8;
-pub use self::utf8::*;
+mod unutf8;
+pub use self::unutf8::*;
 
 #[derive(Copy, Clone)]
 pub struct CodeFunctions {
