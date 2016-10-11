@@ -10,7 +10,7 @@ pub struct UnUtf8 {
     codepoint: u32,
 }
 
-impl CodeStatics  for UnUtf8 {
+impl CodeStatics for UnUtf8 {
     fn new(input: InputBox, _options: &str) -> InputBox {
         Box::new(UnUtf8 {
             input: input,
@@ -22,7 +22,10 @@ impl CodeStatics  for UnUtf8 {
     }
 
     fn print_help() {
-        println!("<unutf8 help>");
+        // TODO: add a "strict" mode that checks for overlong sequences (or maybe invert that and
+        // have a "relaxed" mode)
+        // TODO: add a mode that yields substitution characters instead of errors
+        println!("(no options)");
     }
 }
 

@@ -1,5 +1,7 @@
 use super::encoding::*;
 
+mod code_adapter;
+
 mod hex;
 pub use self::hex::*;
 
@@ -8,6 +10,11 @@ pub use self::unicode::*;
 
 mod unutf8;
 pub use self::unutf8::*;
+
+mod utf8;
+pub use self::utf8::*;
+
+mod utils;
 
 #[derive(Copy, Clone)]
 pub struct CodeFunctions {
@@ -24,11 +31,12 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 4] = [
+const MAP: [(&'static str, CodeFunctions); 5] = [
     entry!("hex" => HexEncode),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("unutf8" => UnUtf8),
+    entry!("utf8" => Utf8),
 ];
 
 fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
