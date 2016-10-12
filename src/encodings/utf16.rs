@@ -9,7 +9,8 @@ pub struct Utf16 {
 impl CodeStatics for Utf16 {
     fn new(input: InputBox, options: &str) -> Result<InputBox, String> {
         let mut big_endian = false;
-        match options.to_lowercase().as_str() {
+        match options {
+            "" => (),
             "le" => (),
             "be" => { big_endian = true; },
             _ => { return Err("utf16: invalid options".into()); }

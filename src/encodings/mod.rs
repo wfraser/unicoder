@@ -45,8 +45,8 @@ const MAP: [(&'static str, CodeFunctions); 8] = [
     entry!("tee" => Tee),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
-    entry!("unutf8" => UnUtf8),
     entry!("un_ucode" => UnUCode),
+    entry!("un_utf8" => UnUtf8),
     entry!("utf16" => Utf16),
     entry!("utf8" => Utf8),
 ];
