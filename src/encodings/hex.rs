@@ -8,12 +8,11 @@ pub struct HexEncode {
 
 impl HexEncode {
     fn hex_chars(&self, byte: u8) -> (u8, u8) {
-        debug!("byte = {:#x}", byte);
+        debug!("byte = {:#04X}", byte);
         (self.hex_char(byte >> 4), self.hex_char(byte & 0xF))
     }
 
     fn hex_char(&self, quad: u8) -> u8 {
-        debug!("digit {:X}", quad);
         assert!(quad < 16);
         if quad < 10 {
             ('0' as u8) + quad
@@ -26,18 +25,18 @@ impl HexEncode {
 }
 
 impl CodeStatics for HexEncode {
-    fn new(input: InputBox, _options: &str) -> InputBox {
-        Box::new(HexEncode {
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        Ok(Box::new(HexEncode {
             input: input,
             uppercase: false,
             output_buffer: vec![],
-        }) as Box<Code>
+        }))
     }
 
     fn print_help() {
         // TODO: add options for spacing, upper/lowercase, etc.
-        println!("(no options)");
         println!("Formats input as hexadecimal, 2 digits, space separated.");
+        println!("(no options)");
     }
 }
 
@@ -50,7 +49,6 @@ impl Code for HexEncode {
         match self.input.next() {
             Some(Ok(byte)) => {
                 let (current, next) = self.hex_chars(byte);
-                debug!("{:#x}, {:#x}", current, next);
                 self.output_buffer.push(0x20);
                 self.output_buffer.push(next);
                 Some(Ok(current))
@@ -66,15 +64,15 @@ pub struct HexDecode {
 }
 
 impl CodeStatics for HexDecode {
-    fn new(input: InputBox, _options: &str) -> InputBox {
-        Box::new(HexDecode {
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        Ok(Box::new(HexDecode {
             input: input,
-        })
+        }))
     }
 
     fn print_help() {
-        println!("(no options)");
         println!("Parses hexadecimal input into raw data. Ignores whitespace.");
+        println!("(no options)");
     }
 }
 
@@ -101,7 +99,7 @@ impl Code for HexDecode {
                         return Some(Err(CodeError::new("out of range")
                                                   .with_bytes([byte].to_vec())));
                     };
-                    debug!("digit {:X}", value);
+                    debug!("read digit {:X}", value);
 
                     if !first {
                         out <<= 4;

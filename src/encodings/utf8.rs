@@ -3,19 +3,20 @@ use super::code_adapter::*;
 use super::super::encoding::*;
 
 pub struct Utf8 {
-    adapter: Utf32Adapter,
+    adapter: U32Adapter,
 }
 
 impl CodeStatics for Utf8 {
-    fn new(input: InputBox, _options: &str) -> InputBox {
-        Box::new(Utf8 {
-            adapter: Utf32Adapter::new(input, Box::new(Self::process_codepoint)),
-        }) as InputBox
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        let big_endian = true;
+        Ok(Box::new(Utf8 {
+            adapter: U32Adapter::new(input, big_endian, Box::new(Self::process_codepoint)),
+        }))
     }
 
     fn print_help() {
-        println!("(no options)");
         println!("Encodes character data (UTF-32BE) as UTF-16");
+        println!("(no options)");
     }
 }
 

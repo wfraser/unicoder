@@ -1,7 +1,9 @@
 #[macro_use]
 extern crate log;
 extern crate ucd;
+extern crate unicode_names;
 
+use std::collections::VecDeque;
 use std::env;
 use std::io::{self, Read, Write};
 use std::process;
@@ -59,7 +61,7 @@ impl DebugOutput {
 }
 
 fn main() {
-    let mut args: Vec<_> = env::args().collect();
+    let mut args: VecDeque<_> = env::args().collect();
 
     let mut debug = false;
     let mut verbose = false;
@@ -70,9 +72,10 @@ fn main() {
         help = true;
     }
 
-    let mut num_option_args = 0;
-    for (i, arg) in args.iter().skip(1).enumerate() {
-        num_option_args = i;
+    let program_name = args.pop_front().unwrap();
+
+    while !args.is_empty() {
+        let arg = args.pop_front().unwrap();
         if arg.starts_with("-") {
             if !arg.starts_with("--") {
                 for c in arg.chars().skip(1) {
@@ -94,21 +97,24 @@ fn main() {
                 list = true;
             } else if arg == "--help" {
                 help = true;
+            } else {
+                println!("unknown option {:?}", arg);
+                process::exit(-1);
             }
         } else {
+            // put the argument back
+            args.push_front(arg);
             break;
         }
     }
-
-    args = args.split_off(num_option_args);
 
     if debug || verbose {
         DebugOutput::init(debug);
     }
 
     if help {
-        if args.len() > 1 {
-            for encoding in args.iter().skip(1) {
+        if !args.is_empty() {
+            for ref encoding in args {
                 println!("{}:", encoding);
                 if let Err(msg) = print_help(encoding) {
                     println!("{}", msg);
@@ -116,9 +122,9 @@ fn main() {
                 println!("");
             }
         } else {
-            println!("usage: {} [options] <encoding[,option,...]>...]", args[0]);
-            println!("       {} {{--help|-h}} [encoding]", args[0]);
-            println!("       {} --list", args[0]);
+            println!("usage: {} [options] <encoding[,option,...]>...]", program_name);
+            println!("       {} {{--help|-h}} [encoding]", program_name);
+            println!("       {} --list", program_name);
             println!("options:");
             println!("      -d | --debug        enable stderr debug output logging");
             println!("      -v | --verbose      enable stderr error output logging");
@@ -133,7 +139,7 @@ fn main() {
     }
 
     let mut input: Box<Code> = Box::new(StdinCode { input: io::stdin().bytes() });
-    for encoding in args.iter().skip(1) {
+    for encoding in args {
         debug!("encoding: {}", encoding);
         let parts: Vec<&str> = encoding.splitn(2, ",").collect();
         input = get_code(parts[0], input, parts.get(1).unwrap_or(&"")).unwrap();

@@ -24,7 +24,7 @@ mod utils;
 
 #[derive(Copy, Clone)]
 pub struct CodeFunctions {
-    pub new: &'static Fn(InputBox, &str) -> InputBox,
+    pub new: &'static Fn(InputBox, &str) -> Result<InputBox, String>,
     pub print_help: &'static Fn(),
 }
 
@@ -59,7 +59,7 @@ fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
 
 pub fn get_code(name: &str, input: InputBox, options: &str) -> Result<InputBox, String> {
     match map_lookup(name) {
-        Ok(functions) => Ok((functions.new)(input, options)),
+        Ok(functions) => (functions.new)(input, options),
         Err(e) => Err(e),
     }
 }

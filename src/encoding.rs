@@ -63,7 +63,7 @@ pub trait Code {
 }
 
 pub trait CodeStatics {
-    fn new(input: InputBox, options: &str) -> InputBox;
+    fn new(input: InputBox, options: &str) -> Result<InputBox, String>;
     fn print_help();
 }
 

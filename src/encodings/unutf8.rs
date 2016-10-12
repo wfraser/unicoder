@@ -11,22 +11,22 @@ pub struct UnUtf8 {
 }
 
 impl CodeStatics for UnUtf8 {
-    fn new(input: InputBox, _options: &str) -> InputBox {
-        Box::new(UnUtf8 {
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        Ok(Box::new(UnUtf8 {
             input: input,
             output_buffer: vec![],
             input_buffer: vec![],
             nbytes: 0,
             codepoint: 0,
-        }) as InputBox
+        }))
     }
 
     fn print_help() {
         // TODO: add a "strict" mode that checks for overlong sequences (or maybe invert that and
         // have a "relaxed" mode)
         // TODO: add a mode that yields substitution characters instead of errors
-        println!("(no options)");
         println!("Decodes UTF-8 input into character data (UTF-32BE)");
+        println!("(no options)");
     }
 }
 

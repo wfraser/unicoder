@@ -7,16 +7,16 @@ pub struct Tee {
 }
 
 impl CodeStatics for Tee {
-    fn new(input: InputBox, _options: &str) -> InputBox {
-        Box::new(Tee {
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        Ok(Box::new(Tee {
             input: input,
-        }) as InputBox
+        }))
     }
 
     fn print_help() {
         // TODO: add options for writing to arbitrary file descriptors or files instead of stdout
-        println!("(no options)");
         println!("Copies its input verbatim to standard output.");
+        println!("(no options)");
     }
 }
 
