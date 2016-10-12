@@ -13,9 +13,8 @@ pub struct UnicodeInfo {
 
 impl CodeStatics for UnicodeInfo {
     fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
-        let big_endian = true;
         Ok(Box::new(UnicodeInfo {
-            adapter: U32Adapter::new(input, big_endian, Box::new(Self::process_codepoint)),
+            adapter: U32Adapter::new(input, Box::new(Self::process_codepoint)),
         }))
     }
 

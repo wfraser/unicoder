@@ -16,7 +16,7 @@ impl CodeStatics for Utf16 {
         }
 
         Ok(Box::new(Utf16 {
-            adapter: U32Adapter::new(input, true, Box::new(move |cp, out| process_codepoint(cp, out, big_endian))),
+            adapter: U32Adapter::new(input, Box::new(move |cp, out| process_codepoint(cp, out, big_endian))),
         }))
     }
 

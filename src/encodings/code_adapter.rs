@@ -4,16 +4,16 @@ use super::super::encoding::*;
 use std::collections::VecDeque;
 use std::io::{self, Write};
 
-pub struct Utf32Adapter {
+pub struct U32Adapter {
     input: InputBox,
     f: Box<Fn(u32, &mut VecDequeWritable<u8>) -> Result<(), CodeError>>,
     output_buffer: VecDequeWritable<u8>,
     stashed_error: Option<CodeError>,
 }
 
-impl Utf32Adapter {
-    pub fn new(input: InputBox, f: Box<Fn(u32, &mut VecDequeWritable<u8>) -> Result<(), CodeError>>) -> Utf32Adapter {
-        Utf32Adapter {
+impl U32Adapter {
+    pub fn new(input: InputBox, f: Box<Fn(u32, &mut VecDequeWritable<u8>) -> Result<(), CodeError>>) -> U32Adapter {
+        U32Adapter {
             input: input,
             f: f,
             output_buffer: VecDequeWritable::new(),
@@ -22,7 +22,7 @@ impl Utf32Adapter {
     }
 }
 
-impl Code for Utf32Adapter {
+impl Code for U32Adapter {
     fn next(&mut self) -> Option<Result<u8, CodeError>> {
         if self.output_buffer.is_empty() {
             match utils::read_u32_be(&mut self.input) {
