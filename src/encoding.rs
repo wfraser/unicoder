@@ -32,14 +32,18 @@ impl fmt::Display for CodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         try!(write!(f, "Encoding Error: {}", self.message));
         if let Some(ref bytes) = self.bad_bytes {
-            try!(write!(f, " ([{:x}", bytes[0]));
-            for byte in bytes.iter().skip(1) {
-                try!(write!(f, ",{:x}", byte));
+            if bytes.is_empty() {
+                write!(f, " (input: [])");
+            } else {
+                try!(write!(f, " (input: [{:x}", bytes[0]));
+                for byte in bytes.iter().skip(1) {
+                    try!(write!(f, ",{:x}", byte));
+                }
+                try!(write!(f, "])"));
             }
-            try!(write!(f, "])"));
         }
         if let Some(ref e) = self.inner {
-            try!(write!(f, " due to {}", e));
+            try!(write!(f, "\ndue to {}", e));
         }
         Ok(())
     }

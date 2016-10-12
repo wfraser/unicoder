@@ -86,7 +86,7 @@ impl UnUCode {
                             _ => {
                                 error!("unexpected whitespace in state {:?}", state);
                                 return Err(CodeError::new("unexpected whitespace")
-                                                     .with_bytes(mem::replace(&mut bytes, vec![])));
+                                                     .with_bytes(bytes));
                             }
                         }
                     } else {
@@ -131,7 +131,7 @@ impl UnUCode {
                             error!("unexpected {:?} in state {:?}",
                                 unsafe { char::from_u32_unchecked(byte as u32) }, state);
                             return Err(CodeError::new("unexpected input while parsing U+ code")
-                                                 .with_bytes(mem::replace(&mut bytes, vec![])));
+                                                 .with_bytes(bytes));
                         } else {
                             if state == State::Digit8 {
                                 state = State::U;
@@ -154,13 +154,13 @@ impl UnUCode {
                         _ => {
                             error!("unexpected EOF in state {:?}", state);
                             return Err(CodeError::new(format!("unexpected EOF in state {:?}", state))
-                                                 .with_bytes(mem::replace(&mut bytes, vec![])));
+                                                 .with_bytes(bytes));
                         }
                     }
                 },
                 Some(Err(e)) => {
                     return Err(CodeError::new(format!("error parsing U+XXXX sequence in state {:?}", state))
-                                         .with_bytes(mem::replace(&mut bytes, vec![]))
+                                         .with_bytes(bytes)
                                          .with_inner(e));
                 }
             }

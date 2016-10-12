@@ -5,6 +5,7 @@ extern crate unicode_names;
 
 use std::collections::VecDeque;
 use std::env;
+use std::error::Error;
 use std::io::{self, Read, Write};
 use std::process;
 
@@ -149,7 +150,11 @@ fn main() {
         match input.next() {
             None => { break; },
             Some(Ok(byte)) => { io::stdout().write(&[byte]).unwrap(); },
-            Some(Err(e)) => { panic!(format!("{:?}", e)); },
+            Some(Err(e)) => {
+                println!("\nError processing input:\n{}", e);
+                println!("terminating.");
+                process::exit(1);
+            },
         }
     }
 }
