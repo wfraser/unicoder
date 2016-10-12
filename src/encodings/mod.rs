@@ -20,6 +20,9 @@ pub use self::utf16::*;
 mod utf8;
 pub use self::utf8::*;
 
+mod u_code;
+pub use self::u_code::*;
+
 mod utils;
 
 #[derive(Copy, Clone)]
@@ -37,12 +40,13 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 7] = [
+const MAP: [(&'static str, CodeFunctions); 8] = [
     entry!("hex" => HexEncode),
     entry!("tee" => Tee),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("unutf8" => UnUtf8),
+    entry!("un_ucode" => UnUCode),
     entry!("utf16" => Utf16),
     entry!("utf8" => Utf8),
 ];
