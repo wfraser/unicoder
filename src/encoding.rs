@@ -33,11 +33,11 @@ impl fmt::Display for CodeError {
         try!(write!(f, "Encoding Error: {}", self.message));
         if let Some(ref bytes) = self.bad_bytes {
             if bytes.is_empty() {
-                write!(f, " (input: [])");
+                try!(write!(f, " (input: [])"));
             } else {
-                try!(write!(f, " (input: [{:x}", bytes[0]));
+                try!(write!(f, " (input: [{:02X}", bytes[0]));
                 for byte in bytes.iter().skip(1) {
-                    try!(write!(f, ",{:x}", byte));
+                    try!(write!(f, ",{:02X}", byte));
                 }
                 try!(write!(f, "])"));
             }

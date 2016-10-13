@@ -2,7 +2,6 @@ use super::super::encoding::*;
 
 use std::char;
 use std::collections::VecDeque;
-use std::mem;
 
 pub struct UnUCode {
     input: InputBox,
@@ -80,7 +79,6 @@ impl UnUCode {
                             State::U => (), // Ignore leading whitespace
                             State::Digit5 | State::Digit6 | State::Digit7 | State::Digit8 => {
                                 // Whitespace after the first 4 digits ends the sequence
-                                state = State::U;
                                 break;
                             },
                             _ => {
@@ -134,7 +132,6 @@ impl UnUCode {
                                                  .with_bytes(bytes));
                         } else {
                             if state == State::Digit8 {
-                                state = State::U;
                                 break;
                             } else {
                                 state = next_state(state);
@@ -148,7 +145,6 @@ impl UnUCode {
                             return Ok(());
                         }
                         State::Digit5 | State::Digit6 | State::Digit7 | State::Digit8 => {
-                            state = State::U;
                             break;
                         },
                         _ => {

@@ -5,7 +5,6 @@ extern crate unicode_names;
 
 use std::collections::VecDeque;
 use std::env;
-use std::error::Error;
 use std::io::{self, Read, Write};
 use std::process;
 
