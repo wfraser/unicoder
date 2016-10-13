@@ -39,9 +39,15 @@ impl Code for UnicodeInfo {
 }
 
 fn unicode_name(codepoint: u32) -> String {
-    // The C0 and C1 control codes have a name of "<control>" which isn't returned by the
-    // unicode_names crate, but nearly all of them have an official "alias" name, so use that.
-    let control_name = match codepoint {
+    if codepoint > 0x10FFFF {
+        // unicode_names doesn't play nicely with these
+        return "(out of Unicode range)".to_string();
+    }
+
+    // Some names for characters not in the database.
+    let alt_name = match codepoint {
+        // The C0 and C1 control codes have a name of "<control>" which isn't returned by the
+        // unicode_names crate, but nearly all of them have an official "alias" name, so use that.
         // C0 controls
         0x0 => "NULL",
         0x1 => "START OF HEADING",
@@ -109,17 +115,33 @@ fn unicode_name(codepoint: u32) -> String {
         0x9D => "OPERATING SYSTEM COMMAND",
         0x9E => "PRIVACY MESSAGE",
         0x9F => "APPLICATION PROGRAM COMMAND",
+
+        // Surrogates
+        0x00D800 ... 0x00DBFF => "<high surrogate>",
+        0x00DC00 ... 0x00DCFF => "<low surrogate>",
+        // Private use
+        0x00E000 ... 0x00F8FD |                     // Private Use Area
+        0x0F0000 ... 0x0FFFFD |                     // Supplementary Private Use Area-A
+        0x100000 ... 0x10FFFD => "<private use>",   // Supplementary Private Use Area-B
+        // Non-characters
+        0x00FDD0 ... 0x00FDEF => "<not a character>",
+
+        // This is much more often used as a BOM than as a ZWNBSP
+        0x00FEFF => "<byte order mark>",
+
+        // Likewise, if the endian-ness is set wrong, this is what shows up for a BOM.
+        0x00FFFE => "<not a character> (swapped byte order mark)",
+
+        // U+XYFFFE and U+XYFFFF are non-characters for all X and Y.
+        other if other & 0xFFFE == 0xFFFE => "<not a character>",
         _ => ""
     };
 
-    if control_name != "" {
-        return control_name.to_string();
+    if alt_name != "" {
+        return alt_name.to_string();
     }
 
-    if codepoint > 0x10FFFF {
-        // unicode_names doesn't play nicely with these
-        return "(out of Unicode range)".to_string();
-    }
+
 
     let c = unsafe { char::from_u32_unchecked(codepoint) };
     match unicode_names::name(c) {
