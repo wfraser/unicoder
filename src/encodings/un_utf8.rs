@@ -136,8 +136,8 @@ impl UnUtf8 {
                     if shift == 0 {
                         // We just read the last byte in the sequence.
                         if (nbytes == 2 && codepoint < 0x80)
-                                || (nbytes == 3 && codepoint < 0x2080)
-                                || (nbytes == 4 && codepoint < 0x82080)
+                                || (nbytes == 3 && codepoint < 0x800)
+                                || (nbytes == 4 && codepoint < 0x1_0000)
                                 || nbytes > 4 {
                             warn!("overlong sequence: {:?}", bytes);
                             // TODO: make it configurable to raise an error here.
