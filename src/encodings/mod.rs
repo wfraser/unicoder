@@ -11,6 +11,9 @@ pub use self::tee::*;
 mod unicode;
 pub use self::unicode::*;
 
+mod un_utf16;
+pub use self::un_utf16::*;
+
 mod un_utf8;
 pub use self::un_utf8::*;
 
@@ -40,12 +43,13 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 8] = [
+const MAP: [(&'static str, CodeFunctions); 9] = [
     entry!("hex" => HexEncode),
     entry!("tee" => Tee),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("un_ucode" => UnUCode),
+    entry!("un_utf16" => UnUtf16),
     entry!("un_utf8" => UnUtf8),
     entry!("utf16" => Utf16),
     entry!("utf8" => Utf8),
