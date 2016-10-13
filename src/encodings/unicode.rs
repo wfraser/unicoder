@@ -116,6 +116,11 @@ fn unicode_name(codepoint: u32) -> String {
         return control_name.to_string();
     }
 
+    if codepoint > 0x10FFFF {
+        // unicode_names doesn't play nicely with these
+        return "(out of Unicode range)".to_string();
+    }
+
     let c = unsafe { char::from_u32_unchecked(codepoint) };
     match unicode_names::name(c) {
         Some(name) => name.to_string(),
