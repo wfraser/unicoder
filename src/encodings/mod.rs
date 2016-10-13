@@ -11,8 +11,8 @@ pub use self::tee::*;
 mod unicode;
 pub use self::unicode::*;
 
-mod unutf8;
-pub use self::unutf8::*;
+mod un_utf8;
+pub use self::un_utf8::*;
 
 mod utf16;
 pub use self::utf16::*;

@@ -35,7 +35,7 @@ impl UnUtf8 {
         self.output_buffer.push_back((codepoint & 0xFF) as u8);
     }
 
-    fn handle_initial_byte(&mut self, byte: u8) -> Result<(u32, u8), CodeError> { //Option<Result<u32, CodeError>> {
+    fn handle_initial_byte(&mut self, byte: u8) -> Result<(u32, u8), CodeError> {
         let codepoint: u32;
         let nbytes: u8;
         if byte < 0b10000000 {
