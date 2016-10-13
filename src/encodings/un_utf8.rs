@@ -104,6 +104,9 @@ impl UnUtf8 {
                 }
             };
 
+            // keep track of input read so far
+            bytes.push(byte);
+
             if nbytes != 0 {
                 if byte < 0b10000000 {
                     error!("incomplete multi-byte code point: expected {} bytes, only got {:?}, due to single-byte codepoint {:#x}",
@@ -126,7 +129,7 @@ impl UnUtf8 {
                                          .with_bytes(bytes));
                 } else {
                     // Continuation byte.
-                    let shift = 6 * (nbytes - bytes.len() as u8 - 1);
+                    let shift = 6 * (nbytes - bytes.len() as u8);
                     codepoint |= ((byte & 0b00111111) as u32) << shift;
                     debug!("{:#x}: continuation byte", byte);
                     debug!("{:032b}, {} bytes, shift = {}, buffer = {:?}", codepoint, nbytes, shift, bytes);
@@ -141,8 +144,6 @@ impl UnUtf8 {
                         }
                         self.push_codepoint(codepoint);
                         return Ok(())
-                    } else {
-                        bytes.push(byte);
                     }
                 }
             }
