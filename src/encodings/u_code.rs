@@ -1,7 +1,9 @@
 use super::super::encoding::*;
+use super::code_adapter::*;
 
 use std::char;
 use std::collections::VecDeque;
+use std::io::Write;
 
 pub struct UnUCode {
     input: InputBox,
@@ -185,5 +187,35 @@ impl Code for UnUCode {
         } else {
             None
         }
+    }
+}
+
+pub struct UCode {
+    adapter: U32Adapter,
+}
+
+impl UCode {
+    fn process_codepoint(codepoint: u32, output: &mut VecDequeWritable<u8>) -> Result<(), CodeError> {
+        write!(output, "U+{:04X}", codepoint).unwrap();
+        Ok(())
+    }
+}
+
+impl CodeStatics for UCode {
+    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+        Ok(Box::new(UCode {
+            adapter: U32Adapter::new(input, Box::new(UCode::process_codepoint)),
+        }))
+    }
+
+    fn print_help() {
+        println!("Formats character data (UTF-32BE) as U+XXXX codes, separated by spaces.");
+        println!("(no options)");
+    }
+}
+
+impl Code for UCode {
+    fn next(&mut self) -> Option<Result<u8, CodeError>> {
+        self.adapter.next()
     }
 }

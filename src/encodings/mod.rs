@@ -43,9 +43,10 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 9] = [
+const MAP: [(&'static str, CodeFunctions); 10] = [
     entry!("hex" => HexEncode),
     entry!("tee" => Tee),
+    entry!("ucode" => UCode),
     entry!("unhex" => HexDecode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("un_ucode" => UnUCode),
