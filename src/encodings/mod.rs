@@ -1,21 +1,13 @@
 use super::encoding::*;
 
-mod code_adapter;
-
 mod hex;
 pub use self::hex::*;
 
-mod tee;
-pub use self::tee::*;
+mod u_code;
+pub use self::u_code::*;
 
-mod unicode;
-pub use self::unicode::*;
-
-mod un_utf16;
-pub use self::un_utf16::*;
-
-mod un_utf8;
-pub use self::un_utf8::*;
+mod unicode_info;
+pub use self::unicode_info::*;
 
 mod utf16;
 pub use self::utf16::*;
@@ -23,14 +15,11 @@ pub use self::utf16::*;
 mod utf8;
 pub use self::utf8::*;
 
-mod u_code;
-pub use self::u_code::*;
-
 mod utils;
 
 #[derive(Copy, Clone)]
 pub struct CodeFunctions {
-    pub new: &'static Fn(InputBox, &str) -> Result<InputBox, String>,
+    pub new: &'static Fn(&str) -> Result<Box<Encoding>, String>,
     pub print_help: &'static Fn(),
 }
 
@@ -43,17 +32,16 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 10] = [
+const MAP: [(&'static str, CodeFunctions); 9] = [
     entry!("hex" => HexEncode),
-    entry!("tee" => Tee),
-    entry!("ucode" => UCode),
-    entry!("unhex" => HexDecode),
+    entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),
-    entry!("un_ucode" => UnUCode),
-    entry!("un_utf16" => UnUtf16),
-    entry!("un_utf8" => UnUtf8),
-    entry!("utf16" => Utf16),
-    entry!("utf8" => Utf8),
+    entry!("un_hex" => HexDecode),
+    entry!("un_ucode" => UCodeDecode),
+    entry!("un_utf16" => Utf16Decode),
+    entry!("un_utf8" => Utf8Decode),
+    entry!("utf16" => Utf16Encode),
+    entry!("utf8" => Utf8Encode),
 ];
 
 fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
@@ -66,9 +54,9 @@ fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
     Err(format!("unknown coding scheme {:?}", name))
 }
 
-pub fn get_code(name: &str, input: InputBox, options: &str) -> Result<InputBox, String> {
+pub fn get_encoding(name: &str, options: &str) -> Result<Box<Encoding>, String> {
     match map_lookup(name) {
-        Ok(functions) => (functions.new)(input, options),
+        Ok(functions) => (functions.new)(options),
         Err(e) => Err(e),
     }
 }

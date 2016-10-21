@@ -1,9 +1,7 @@
 use super::super::encoding::*;
 
 pub struct HexEncode {
-    input: InputBox,
     uppercase: bool,
-    output_buffer: Vec<u8>,
 }
 
 impl HexEncode {
@@ -24,12 +22,10 @@ impl HexEncode {
     }
 }
 
-impl CodeStatics for HexEncode {
-    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
+impl EncodingStatics for HexEncode {
+    fn new(_options: &str) -> Result<Box<Encoding>, String> {
         Ok(Box::new(HexEncode {
-            input: input,
             uppercase: false,
-            output_buffer: vec![],
         }))
     }
 
@@ -40,18 +36,12 @@ impl CodeStatics for HexEncode {
     }
 }
 
-impl Code for HexEncode {
-    fn next(&mut self) -> Option<Result<u8, CodeError>> {
-        if !self.output_buffer.is_empty() {
-            return Some(Ok(self.output_buffer.pop().unwrap()));
-        }
-
-        match self.input.next() {
+impl Encoding for HexEncode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        match input.get_byte() {
             Some(Ok(byte)) => {
-                let (current, next) = self.hex_chars(byte);
-                self.output_buffer.push(0x20);
-                self.output_buffer.push(next);
-                Some(Ok(current))
+                let (high, low) = self.hex_chars(byte);
+                Some(Ok(vec![high, low, ' ' as u8]))
             },
             Some(Err(e)) => Some(Err(e)),
             None => None,
@@ -59,15 +49,11 @@ impl Code for HexEncode {
     }
 }
 
-pub struct HexDecode {
-    input: InputBox,
-}
+pub struct HexDecode;
 
-impl CodeStatics for HexDecode {
-    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
-        Ok(Box::new(HexDecode {
-            input: input,
-        }))
+impl EncodingStatics for HexDecode {
+    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+        Ok(Box::new(HexDecode))
     }
 
     fn print_help() {
@@ -76,13 +62,13 @@ impl CodeStatics for HexDecode {
     }
 }
 
-impl Code for HexDecode {
-    fn next(&mut self) -> Option<Result<u8, CodeError>> {
+impl Encoding for HexDecode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut out = 0u8;
         let mut first = true;
 
         loop {
-            match self.input.next() {
+            match input.get_byte() {
                 Some(Ok(byte)) => {
                     let c = byte as char;
                     let value = if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
@@ -110,7 +96,7 @@ impl Code for HexDecode {
                     if first {
                         first = false;
                     } else {
-                        return Some(Ok(out));
+                        return Some(Ok(vec![out]));
                     }
                 },
                 Some(Err(e)) => {

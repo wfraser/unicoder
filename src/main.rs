@@ -18,12 +18,20 @@ struct StdinCode {
     input: io::Bytes<io::Stdin>,
 }
 
-impl Code for StdinCode {
+impl Iterator for StdinCode {
+    type Item = Result<u8, CodeError>;
     fn next(&mut self) -> Option<Result<u8, CodeError>> {
-        match self.input.next() {
-            Some(result) => Some(Ok(result.unwrap())),  // todo: needs IO error handling
-            None => None
-        }
+        self.input.next().map(|result|
+            result.map_err(|ioerr|
+                CodeError::new("I/O error in stdin").with_inner(ioerr)))
+    }
+}
+
+struct IdentityEncoding;
+
+impl Encoding for IdentityEncoding {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        input.get_bytes(1)
     }
 }
 
@@ -138,15 +146,17 @@ fn main() {
         process::exit(-1);
     }
 
-    let mut input: Box<Code> = Box::new(StdinCode { input: io::stdin().bytes() });
-    for encoding in args {
-        debug!("encoding: {}", encoding);
-        let parts: Vec<&str> = encoding.splitn(2, ",").collect();
-        input = get_code(parts[0], input, parts.get(1).unwrap_or(&"")).unwrap();
+    let stdin = Box::new(StdinCode { input: io::stdin().bytes() });
+    let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding)));
+    for encoding_name in args {
+        debug!("encoding: {}", encoding_name);
+        let parts: Vec<&str> = encoding_name.splitn(2, ",").collect();
+        let encoding = get_encoding(parts[0], parts.get(1).unwrap_or(&"")).unwrap();
+        encoder = Box::new(Encoder::new(encoder, encoding));
     }
 
     loop {
-        match input.next() {
+        match encoder.next() {
             None => { break; },
             Some(Ok(byte)) => { io::stdout().write(&[byte]).unwrap(); },
             Some(Err(e)) => {

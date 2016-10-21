@@ -1,55 +1,19 @@
 use super::super::encoding::*;
-use super::code_adapter::*;
+use super::utils;
 
 use std::char;
-use std::collections::VecDeque;
 use std::io::Write;
 
-pub struct UnUCode {
-    input: InputBox,
-    output_buffer: VecDeque<u8>,
-}
+pub struct UCodeDecode;
 
-impl CodeStatics for UnUCode {
-    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
-        Ok(Box::new(UnUCode {
-            input: input,
-            output_buffer: VecDeque::new(),
-        }))
+impl EncodingStatics for UCodeDecode {
+    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+        Ok(Box::new(UCodeDecode))
     }
 
     fn print_help() {
         println!("Parses whitespace-separated 'U+XXXX' sequences into character data (UTF-32BE)");
         println!("(no options)");
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum State {
-    U,
-    Plus,
-    Digit1,
-    Digit2,
-    Digit3,
-    Digit4,
-    Digit5,
-    Digit6,
-    Digit7,
-    Digit8,
-}
-
-fn next_state(state: State) -> State {
-    match state {
-        State::U => State::Plus,
-        State::Plus => State::Digit1,
-        State::Digit1 => State::Digit2,
-        State::Digit2 => State::Digit3,
-        State::Digit3 => State::Digit4,
-        State::Digit4 => State::Digit5,
-        State::Digit5 => State::Digit6,
-        State::Digit6 => State::Digit7,
-        State::Digit7 => State::Digit8,
-        State::Digit8 => panic!("can't call next_state on Digit8"),
     }
 }
 
@@ -65,147 +29,108 @@ fn hex_digit_value(c: u8) -> Option<u8> {
     }
 }
 
-impl UnUCode {
-    fn parse_input(&mut self) -> Result<(), CodeError> {
+fn unexpected(bytes: Vec<u8>, expected: Option<&'static str>) -> Option<Result<Vec<u8>, CodeError>> {
+    let mut msg = format!("unexpected {:?}", *bytes.last().unwrap() as char);
+    if let Some(expected) = expected {
+        msg.push_str(&format!(", execting {}", expected));
+    }
+    msg.push_str(" while parsing U+ code");
+    error!("{}", msg);
+    Some(Err(CodeError::new(msg).with_bytes(bytes)))
+}
+
+fn error(msg: &'static str, bytes: Vec<u8>, error: Option<CodeError>) -> Option<Result<Vec<u8>, CodeError>> {
+    if let Some(error) = error {
+        error!("{} while reading U+ code: {}", msg, error);
+        Some(Err(CodeError::new("Error reading U+ code").with_bytes(bytes).with_inner(error)))
+    } else {
+        error!("{} while reading U+ code", msg);
+        Some(Err(CodeError::new("EOF while reading U+ code").with_bytes(bytes)))
+    }
+}
+
+impl Encoding for UCodeDecode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut codepoint = 0u32;
-        let mut state = State::U;
         let mut bytes = vec![];
 
+        // Find a character 'U', ignoring whitespace.
         loop {
-            match self.input.next() {
+            match input.get_byte() {
                 Some(Ok(byte)) => {
                     bytes.push(byte);
 
-                    if byte == b' ' || byte == b'\t' || byte == b'\r' || byte == b'\n' {
-                        match state {
-                            State::U => (), // Ignore leading whitespace
-                            State::Digit5 | State::Digit6 | State::Digit7 | State::Digit8 => {
-                                // Whitespace after the first 4 digits ends the sequence
-                                break;
-                            },
-                            _ => {
-                                error!("unexpected whitespace in state {:?}", state);
-                                return Err(CodeError::new("unexpected whitespace")
-                                                     .with_bytes(bytes));
-                            }
-                        }
-                    } else {
-                        let mut error = false;
-                        match state {
-                            State::U => {
-                                if byte != b'U' {
-                                    error = true;
-                                }
-                            },
-                            State::Plus => {
-                                if byte != b'+' {
-                                    error = true;
-                                }
-                            },
-                            State::Digit1 | State::Digit2 | State::Digit3 | State::Digit4 => {
-                                if let Some(value) = hex_digit_value(byte) {
-                                    let shift = match state {
-                                        State::Digit1 => 12,
-                                        State::Digit2 => 8,
-                                        State::Digit3 => 4,
-                                        State::Digit4 => 0,
-                                        _ => unreachable!(),
-                                    };
-                                    codepoint |= (value as u32) << shift;
-                                } else {
-                                    error = true;
-                                }
-                            },
-                            State::Digit5 | State::Digit6 | State::Digit7 | State::Digit8 => {
-                                // whitespace was checked above
-                                if let Some(value) = hex_digit_value(byte) {
-                                    codepoint <<= 4;
-                                    codepoint |= value as u32;
-                                } else {
-                                    error = true;
-                                }
-                            }
-                        }
-
-                        if error {
-                            error!("unexpected {:?} in state {:?}",
-                                unsafe { char::from_u32_unchecked(byte as u32) }, state);
-                            return Err(CodeError::new("unexpected input while parsing U+ code")
-                                                 .with_bytes(bytes));
-                        } else {
-                            if state == State::Digit8 {
-                                break;
-                            } else {
-                                state = next_state(state);
-                            }
-                        }
+                    match byte {
+                        b'U' => { break; },
+                        b' ' | b'\t' | b'\r' | b'\n' => { continue; },
+                        _ => { return unexpected(bytes, Some("whitespace or 'U'")); }
                     }
                 },
-                None => {
-                    match state {
-                        State::U => {
-                            return Ok(());
+                Some(Err(e)) => { return Some(Err(e)); },
+                None => { return None; },
+            }
+        }
+
+        // Read a '+'.
+        match input.get_byte() {
+            Some(Ok(byte)) => {
+                if byte != b'+' {
+                    return unexpected(bytes, Some("'+'"));
+                }
+            },
+            Some(Err(e)) => { return error("error", bytes, Some(e)); },
+            None => { return error("EOF", bytes, None); }
+        }
+
+        // Read a minimum of 4 hex digits.
+        match input.get_bytes(4) {
+            Some(Ok(read)) => {
+                bytes.extend(&read);
+                for (i, byte) in read.iter().enumerate() {
+                    let value = match hex_digit_value(*byte) {
+                        Some(v) => v,
+                        None => {
+                            return error("got garbage while expecting hex digit", bytes, None);
                         }
-                        State::Digit5 | State::Digit6 | State::Digit7 | State::Digit8 => {
+                    };
+
+                    codepoint |= (value as u32) << (4 * (3 - i));
+                }
+            },
+            Some(Err(e)) => { return error("error", bytes, Some(e)); }
+            None => { return error("EOF", bytes, None); }
+        }
+
+        // Read up to two more hex digits.
+        for _ in 4..6 {
+            match input.get_byte() {
+                Some(Ok(byte)) => {
+                    bytes.push(byte);
+                    let value = match hex_digit_value(byte) {
+                        Some(v) => v,
+                        None => {
+                            // Not a hex digit; we're done with this codepoint.
                             break;
                         },
-                        _ => {
-                            error!("unexpected EOF in state {:?}", state);
-                            return Err(CodeError::new(format!("unexpected EOF in state {:?}", state))
-                                                 .with_bytes(bytes));
-                        }
-                    }
+                    };
+
+                    codepoint <<= 4;
+                    codepoint |= value as u32;
                 },
-                Some(Err(e)) => {
-                    return Err(CodeError::new(format!("error parsing U+XXXX sequence in state {:?}", state))
-                                         .with_bytes(bytes)
-                                         .with_inner(e));
-                }
+                Some(Err(e)) => { return error("error", bytes, Some(e)); },
+                None => { break; }
             }
         }
 
-        // have codepoint, now push to output buffer.
-        for i in 0..4 {
-            let shift = 8 * (3 - i);
-            self.output_buffer.push_back(((codepoint & (0xFF << shift)) >> shift) as u8);
-        }
-
-        Ok(())
+        Some(Ok(utils::u32_to_bytes(codepoint, true)))
     }
 }
 
-impl Code for UnUCode {
-    fn next(&mut self) -> Option<Result<u8, CodeError>> {
-        if self.output_buffer.is_empty() {
-            if let Err(e) = self.parse_input() {
-                return Some(Err(e));
-            }
-        }
+pub struct UCodeEncode;
 
-        if let Some(byte) = self.output_buffer.pop_front() {
-            Some(Ok(byte))
-        } else {
-            None
-        }
-    }
-}
-
-pub struct UCode {
-    adapter: U32Adapter,
-}
-
-impl UCode {
-    fn process_codepoint(codepoint: u32, output: &mut VecDequeWritable<u8>) -> Result<(), CodeError> {
-        write!(output, "U+{:04X}", codepoint).unwrap();
-        Ok(())
-    }
-}
-
-impl CodeStatics for UCode {
-    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
-        Ok(Box::new(UCode {
-            adapter: U32Adapter::new(input, Box::new(UCode::process_codepoint)),
-        }))
+impl EncodingStatics for UCodeEncode {
+    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+        Ok(Box::new(UCodeEncode))
     }
 
     fn print_help() {
@@ -214,8 +139,17 @@ impl CodeStatics for UCode {
     }
 }
 
-impl Code for UCode {
-    fn next(&mut self) -> Option<Result<u8, CodeError>> {
-        self.adapter.next()
+impl Encoding for UCodeEncode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        match input.get_bytes(4) {
+            Some(Ok(bytes)) => {
+                let codepoint = utils::u32_from_bytes(&bytes, true);
+                let mut out = vec![];
+                write!(out, "U+{:04X} ", codepoint).unwrap();
+                Some(Ok(out))
+            },
+            Some(Err(e)) => Some(Err(e)),
+            None => None,
+        }
     }
 }

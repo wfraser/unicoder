@@ -1,40 +1,36 @@
-use super::code_adapter::*;
 use super::super::encoding::*;
+use super::utils;
 
 use std::char;
-use std::io::Write;
 
 use ucd::*;
 use unicode_names;
 
-pub struct UnicodeInfo {
-    adapter: U32Adapter,
-}
+pub struct UnicodeInfo;
 
-impl CodeStatics for UnicodeInfo {
-    fn new(input: InputBox, _options: &str) -> Result<InputBox, String> {
-        Ok(Box::new(UnicodeInfo {
-            adapter: U32Adapter::new(input, Box::new(Self::process_codepoint)),
-        }))
+impl EncodingStatics for UnicodeInfo {
+    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+        Ok(Box::new(UnicodeInfo))
     }
 
     fn print_help() {
-        println!("Displays Unicode character info for UTF-32BE input.");
+        println!("Displays Unicode character info for UTF-32BE input. Doesn't transform the data.");
         println!("(no options)");
     }
 }
 
-impl UnicodeInfo {
-    fn process_codepoint<W: Write>(codepoint: u32, out: &mut W) -> Result<(), CodeError> {
-        writeln!(out, "U+{:04X}: {}", codepoint, unicode_name(codepoint)).unwrap();
-        // TODO: write more info about the code point. Use `ucd` crate.
-        Ok(())
-    }
-}
+impl Encoding for UnicodeInfo {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        let bytes = match input.get_bytes(4) {
+            Some(Ok(bytes)) => bytes,
+            Some(Err(e)) => { return Some(Err(e)); },
+            None => { return None; },
+        };
 
-impl Code for UnicodeInfo {
-    fn next(&mut self) -> Option<Result<u8, CodeError>> {
-        self.adapter.next()
+        let codepoint = utils::u32_from_bytes(&bytes, true);
+        println!("U+{:04X}: {}", codepoint, unicode_name(codepoint));
+
+        Some(Ok(bytes))
     }
 }
 
@@ -140,8 +136,6 @@ fn unicode_name(codepoint: u32) -> String {
     if alt_name != "" {
         return alt_name.to_string();
     }
-
-
 
     let c = unsafe { char::from_u32_unchecked(codepoint) };
     match unicode_names::name(c) {
