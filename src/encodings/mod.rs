@@ -3,6 +3,9 @@ use super::encoding::*;
 mod hex;
 pub use self::hex::*;
 
+mod iso8859;
+pub use self::iso8859::*;
+
 mod u_code;
 pub use self::u_code::*;
 
@@ -32,11 +35,13 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 9] = [
+const MAP: [(&'static str, CodeFunctions); 11] = [
     entry!("hex" => HexEncode),
+    entry!("iso8859" => Iso8859Encode),
     entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("un_hex" => HexDecode),
+    entry!("un_iso8859" => Iso8859Decode),
     entry!("un_ucode" => UCodeDecode),
     entry!("un_utf16" => Utf16Decode),
     entry!("un_utf8" => Utf8Decode),
