@@ -152,10 +152,13 @@ impl Iterator for Encoder {
                     self.output_buffer.extend(bytes);
                 },
                 Some(Err(e)) => {
+                    debug!("encoding returned error; stashing: {}", e);
                     // TODO: what if stashed_error is Some already?
                     self.stashed_error = Some(e);
                 },
-                None => (),
+                None => {
+                    debug!("encoding returned EOF");
+                },
             }
         }
 
@@ -164,6 +167,7 @@ impl Iterator for Encoder {
         }
 
         if let Some(err) = self.stashed_error.take() {
+            debug!("returning stashed error");
             return Some(Err(err));
         }
 
