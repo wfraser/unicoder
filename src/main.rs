@@ -147,7 +147,7 @@ fn main() {
     }
 
     let stdin = Box::new(StdinCode { input: io::stdin().bytes() });
-    let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding)));
+    let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding), "stdin"));
     for encoding_name in args {
         debug!("encoding: {}", encoding_name);
         let parts: Vec<&str> = encoding_name.splitn(2, ",").collect();
@@ -158,7 +158,7 @@ fn main() {
                 process::exit(-1);
             }
         };
-        encoder = Box::new(Encoder::new(encoder, encoding));
+        encoder = Box::new(Encoder::new(encoder, encoding, encoding_name.as_str()));
     }
 
     loop {

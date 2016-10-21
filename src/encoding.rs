@@ -125,6 +125,7 @@ impl BufferedInput {
 /// iterator by buffering the data internally.
 pub struct Encoder {
     encoding: Box<Encoding>,
+    encoding_name: String,
     input: BufferedInput,
     output_buffer: VecDeque<u8>,
     stashed_error: Option<CodeError>,
@@ -133,9 +134,11 @@ pub struct Encoder {
 impl Encoder {
     /// Make a new encoder, using the given byte-oriented iterator as input, and the given
     /// encoding.
-    pub fn new(input: ByteIterator, encoding: Box<Encoding>) -> Encoder {
+    pub fn new<T: Into<String>>(input: ByteIterator, encoding: Box<Encoding>, enc_name: T)
+            -> Encoder {
         Encoder {
             encoding: encoding,
+            encoding_name: enc_name.into(),
             input: BufferedInput::new(input),
             output_buffer: VecDeque::new(),
             stashed_error: None,
@@ -152,12 +155,12 @@ impl Iterator for Encoder {
                     self.output_buffer.extend(bytes);
                 },
                 Some(Err(e)) => {
-                    debug!("encoding returned error; stashing: {}", e);
+                    debug!("{} returned error; stashing: {}", self.encoding_name, e);
                     // TODO: what if stashed_error is Some already?
                     self.stashed_error = Some(e);
                 },
                 None => {
-                    debug!("encoding returned EOF");
+                    debug!("{} returned EOF", self.encoding_name);
                 },
             }
         }
@@ -167,7 +170,7 @@ impl Iterator for Encoder {
         }
 
         if let Some(err) = self.stashed_error.take() {
-            debug!("returning stashed error");
+            debug!("{} returning stashed error", self.encoding_name);
             return Some(Err(err));
         }
 
@@ -200,10 +203,10 @@ impl EncodingInput for BufferedInput {
                     },
                     None => {
                         if result.len() == 0 {
-                            debug!("EOF in adapter read");
                             return None;
                         } else {
-                            error!("premature EOF in adapter: wanted {} bytes, only got {}", n, result.len());
+                            error!("premature EOF in BufferedInput: wanted {} bytes, only got {}",
+                                   n, result.len());
                             return Some(Err(CodeError::new("premature EOF in input adapter")
                                                       .with_bytes(result)));
                         }
