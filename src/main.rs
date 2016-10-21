@@ -151,7 +151,13 @@ fn main() {
     for encoding_name in args {
         debug!("encoding: {}", encoding_name);
         let parts: Vec<&str> = encoding_name.splitn(2, ",").collect();
-        let encoding = get_encoding(parts[0], parts.get(1).unwrap_or(&"")).unwrap();
+        let encoding = match get_encoding(parts[0], parts.get(1).unwrap_or(&"")) {
+            Ok(enc) => enc,
+            Err(msg) => {
+                println!("Error setting up {}: {}", parts[0], msg);
+                process::exit(-1);
+            }
+        };
         encoder = Box::new(Encoder::new(encoder, encoding));
     }
 

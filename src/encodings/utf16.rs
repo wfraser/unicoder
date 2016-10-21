@@ -11,7 +11,7 @@ impl EncodingStatics for Utf16Encode {
         match options {
             "" | "le" => (),
             "be" => { big_endian = true; },
-            _ =>  { return Err("utf16: invalid options".into()); },
+            _ =>  { return Err("invalid options".into()); },
         }
 
         Ok(Box::new(Utf16Encode {
@@ -87,7 +87,7 @@ impl EncodingStatics for Utf16Decode {
         match options {
             "" | "le" => (),
             "be" => { big_endian = true; },
-            _ =>  { return Err("un_utf16: invalid options".into()); },
+            _ =>  { return Err("invalid options".into()); },
         }
 
         Ok(Box::new(Utf16Decode {
