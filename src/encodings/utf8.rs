@@ -100,7 +100,7 @@ impl EncodingStatics for Utf8Decode {
 fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<Error>>)
         -> Option<Result<Vec<u8>, CodeError>> {
     let last_byte = *bytes.last().unwrap();
-    let mut msg = format!("incomplete multi-byte code point: expected {} bytes, only got {}", nbytes, bytes.len());
+    let mut msg = format!("incomplete multi-byte code point: expected {} bytes, only got {}", nbytes, bytes.len() - 1);
     if let Some(ref e) = error {
         msg.push_str(&format!(" due to error: {}", e));
     } else if last_byte < 0b10000000 {

@@ -8,6 +8,7 @@ pub struct CodeError {
     message: String,
     bad_bytes: Option<Vec<u8>>,
     inner: Option<Box<Error>>,
+    encoding_name: Option<String>,
 }
 
 impl CodeError {
@@ -17,6 +18,7 @@ impl CodeError {
             message: message.into(),
             bad_bytes: None,
             inner: None,
+            encoding_name: None,
         }
     }
 
@@ -36,11 +38,20 @@ impl CodeError {
     pub fn set_inner(&mut self, inner: Option<Box<Error>>) {
         self.inner = inner;
     }
+
+    pub fn with_name<T: Into<String>>(mut self, name: T) -> CodeError {
+        self.encoding_name = Some(name.into());
+        self
+    }
 }
 
 impl fmt::Display for CodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "Encoding Error: {}", self.message));
+        try!(write!(f, "Encoding Error"));
+        if let Some(ref name) = self.encoding_name {
+            try!(write!(f, " in {}", name));
+        }
+        try!(write!(f, ": {}", self.message));
         if let Some(ref bytes) = self.bad_bytes {
             if bytes.is_empty() {
                 try!(write!(f, " (input: [])"));
@@ -157,7 +168,7 @@ impl Iterator for Encoder {
                 Some(Err(e)) => {
                     debug!("{} returned error; stashing: {}", self.encoding_name, e);
                     // TODO: what if stashed_error is Some already?
-                    self.stashed_error = Some(e);
+                    self.stashed_error = Some(e.with_name(self.encoding_name.as_str()));
                 },
                 None => {
                     debug!("{} returned EOF", self.encoding_name);
