@@ -142,20 +142,20 @@ impl Encoding for Iso8859Encode {
             }
         };
 
-        debug!("U+{:04X} maps to {:02X}", codepoint, mapped);
+        debug!("U+{:04X} maps to {:#04X}", codepoint, mapped);
         Some(Ok(vec![mapped]))
     }
 }
 
 pub struct Iso8859Decode {
-    _part: u8,
+    part: u8,
 }
 
 impl EncodingStatics for Iso8859Decode {
     fn new(options: &str) -> Result<Box<Encoding>, String> {
         let part = try!(part_number(options));
         Ok(Box::new(Iso8859Decode {
-            _part: part,
+            part: part,
         }))
     }
 
@@ -167,7 +167,37 @@ impl EncodingStatics for Iso8859Decode {
 }
 
 impl Encoding for Iso8859Decode {
-    fn next(&mut self, _input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
-        Some(Err(CodeError::new("ISO 8859 decode not implemented yet.")))
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        let byte = match input.get_byte() {
+            Some(Ok(byte)) => byte,
+            Some(Err(e)) => { return Some(Err(e)); },
+            None => { return None; }
+        };
+
+        if byte < 0xA1 {
+            return Some(Ok(utils::u32_to_bytes(byte as u32, true)));
+        }
+
+        let codepoint = if byte < 0xA1 || self.part == 1 {
+            byte as u32
+        } else if self.part == 15 {
+            match MAPPING_15.iter().find(|&&(from, _to)| from == byte) {
+                Some(&(_from, to)) => to,
+                None => byte as u32
+            }
+        } else {
+            let mapping = MAPPINGS[self.part as usize - 1];
+            match mapping[byte as usize - 0xA1] {
+                UNDEF => {
+                    let msg = format!("undefined ISO 8859-{} code unit {:#04X}", self.part, byte);
+                    error!("{}", msg);
+                    return Some(Err(CodeError::new(msg).with_bytes(vec![byte])));
+                },
+                codepoint => codepoint
+            }
+        };
+
+        debug!("{:#04X} maps to U+{:04X}", byte, codepoint);
+        Some(Ok(utils::u32_to_bytes(codepoint, true)))
     }
 }
