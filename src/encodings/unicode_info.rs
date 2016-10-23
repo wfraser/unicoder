@@ -2,6 +2,7 @@ use super::super::encoding::*;
 use super::utils;
 
 use std::char;
+use std::fmt::Debug;
 
 use ucd::*;
 use unicode_names;
@@ -19,6 +20,24 @@ impl EncodingStatics for UnicodeInfo {
     }
 }
 
+fn name<T: Debug>(x: &T) -> String {
+    let raw = format!("{:?}", x);
+    let mut out = String::new();
+    let mut first = true;
+    for c in raw.chars() {
+        if c.is_uppercase() {
+            if !first {
+                out.push(' ');
+            }
+            out.push(c);
+        } else {
+            out.push(c);
+        }
+        first = false;
+    }
+    out
+}
+
 impl Encoding for UnicodeInfo {
     fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let bytes = match input.get_bytes(4) {
@@ -29,6 +48,10 @@ impl Encoding for UnicodeInfo {
 
         let codepoint = utils::u32_from_bytes(&bytes, true);
         println!("U+{:04X}: {}", codepoint, unicode_name(codepoint));
+
+        let c = unsafe { char::from_u32_unchecked(codepoint) };
+        println!("block: {}", c.block().map(|x| name(&x)).unwrap_or("none".into()));
+        println!("category: {}", name(&c.category()));
 
         Some(Ok(bytes))
     }
