@@ -110,6 +110,7 @@ impl Encoding for UCodeDecode {
                         Some(v) => v,
                         None => {
                             // Not a hex digit; we're done with this codepoint.
+                            input.unget_byte(byte);
                             break;
                         },
                     };
