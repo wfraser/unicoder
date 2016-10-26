@@ -68,6 +68,18 @@ impl DebugOutput {
     }
 }
 
+pub fn parse_error_policy(s: &str) -> Option<ErrorPolicy> {
+    if s == "halt" {
+        Some(ErrorPolicy::Halt)
+    } else if s == "skip" {
+        Some(ErrorPolicy::Skip)
+    } else if s == "replace" {
+        Some(ErrorPolicy::Replace)
+    } else {
+        None
+    }
+}
+
 fn main() {
     let mut args: VecDeque<_> = env::args().collect();
 
@@ -81,6 +93,8 @@ fn main() {
     }
 
     let program_name = args.pop_front().unwrap();
+
+    let mut error_policy = ErrorPolicy::Halt;
 
     while !args.is_empty() {
         let arg = args.pop_front().unwrap();
@@ -105,6 +119,12 @@ fn main() {
                 list = true;
             } else if arg == "--help" {
                 help = true;
+            } else if arg.starts_with("--errors=") {
+                error_policy = parse_error_policy(&arg["--errors=".len()..])
+                        .unwrap_or_else(|| {
+                    println!("invalid error policy");
+                    process::exit(-1);
+                });
             } else {
                 println!("unknown option {:?}", arg);
                 process::exit(-1);
@@ -136,6 +156,11 @@ fn main() {
             println!("options:");
             println!("      -d | --debug        enable stderr debug output logging");
             println!("      -v | --verbose      enable stderr error output logging");
+            println!("      --errors=<error policy>");
+            println!("          halt            exit on errors (default)");
+            println!("          skip            skip over erroneous input");
+            println!("          replace         substitute with the encoding's replacement");
+            println!("                            character (e.g. U+FFFD or '?')");
         }
         process::exit(-1);
     }
@@ -146,8 +171,10 @@ fn main() {
         process::exit(-1);
     }
 
+    debug!("using error policy {:?}", error_policy);
+
     let stdin = Box::new(StdinCode { input: io::stdin().bytes() });
-    let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding), "stdin"));
+    let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding), "stdin", error_policy));
     for encoding_name in args {
         debug!("encoding: {}", encoding_name);
         let parts: Vec<&str> = encoding_name.splitn(2, ",").collect();
@@ -158,7 +185,7 @@ fn main() {
                 process::exit(-1);
             }
         };
-        encoder = Box::new(Encoder::new(encoder, encoding, encoding_name.as_str()));
+        encoder = Box::new(Encoder::new(encoder, encoding, encoding_name.as_str(), error_policy));
     }
 
     loop {

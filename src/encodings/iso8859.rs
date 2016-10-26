@@ -243,4 +243,8 @@ impl Encoding for Iso8859Decode {
         debug!("{:#04X} maps to U+{:04X}", byte, codepoint);
         Some(Ok(utils::u32_to_bytes(codepoint, true)))
     }
+
+    fn replacement(&self) -> Vec<u8> {
+        utils::unicode_replacement()
+    }
 }

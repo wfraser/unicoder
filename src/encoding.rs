@@ -100,6 +100,12 @@ pub type ByteIterator = Box<Iterator<Item = Result<u8, CodeError>>>;
 pub trait Encoding {
     /// Read from an input and produce the next output, or error.
     fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>>;
+
+    /// When an error is encountered, and the error policy is `ErrorPolicy::Replacement`, this is
+    /// the data that gets put in the output stream.
+    fn replacement(&self) -> Vec<u8> {
+        vec![b'?']
+    }
 }
 
 /// An input that can yield single or multiple bytes.
@@ -140,12 +146,14 @@ pub struct Encoder {
     input: BufferedInput,
     output_buffer: VecDeque<u8>,
     stashed_error: Option<CodeError>,
+    error_policy: ErrorPolicy,
 }
 
 impl Encoder {
     /// Make a new encoder, using the given byte-oriented iterator as input, and the given
     /// encoding.
-    pub fn new<T: Into<String>>(input: ByteIterator, encoding: Box<Encoding>, enc_name: T)
+    pub fn new<T: Into<String>>(input: ByteIterator, encoding: Box<Encoding>, enc_name: T,
+                                error_policy: ErrorPolicy)
             -> Encoder {
         Encoder {
             encoding: encoding,
@@ -153,6 +161,7 @@ impl Encoder {
             input: BufferedInput::new(input),
             output_buffer: VecDeque::new(),
             stashed_error: None,
+            error_policy: error_policy,
         }
     }
 }
@@ -161,18 +170,32 @@ impl Iterator for Encoder {
     type Item = Result<u8, CodeError>;
     fn next(&mut self) -> Option<Result<u8, CodeError>> {
         if self.output_buffer.is_empty() {
-            match self.encoding.next(&mut self.input as &mut EncodingInput) {
-                Some(Ok(bytes)) => {
-                    self.output_buffer.extend(bytes);
-                },
-                Some(Err(e)) => {
-                    debug!("{} returned error; stashing: {}", self.encoding_name, e);
-                    // TODO: what if stashed_error is Some already?
-                    self.stashed_error = Some(e.with_name(self.encoding_name.as_str()));
-                },
-                None => {
-                    debug!("{} returned EOF", self.encoding_name);
-                },
+            loop {
+                match self.encoding.next(&mut self.input as &mut EncodingInput) {
+                    Some(Ok(bytes)) => {
+                        self.output_buffer.extend(bytes);
+                    },
+                    Some(Err(e)) => {
+                        debug!("{} returned error: {}", self.encoding_name, e);
+                        match self.error_policy {
+                            ErrorPolicy::Halt => {
+                                // TODO: what if stashed_error is Some already?
+                                self.stashed_error = Some(e.with_name(self.encoding_name.as_str()));
+                            },
+                            ErrorPolicy::Skip => {
+                                continue;
+                            },
+                            ErrorPolicy::Replace => {
+                                let replacement = self.encoding.replacement();
+                                self.output_buffer.extend(replacement);
+                            }
+                        }
+                    },
+                    None => {
+                        debug!("{} returned EOF", self.encoding_name);
+                    },
+                }
+                break;
             }
         }
 
@@ -231,4 +254,17 @@ impl EncodingInput for BufferedInput {
     fn unget_byte(&mut self, byte: u8) {
         self.input_buffer.push_back(byte);
     }
+}
+
+/// What to do when an error is encountered?
+#[derive(Debug, Copy, Clone)]
+pub enum ErrorPolicy {
+    /// Return an error.
+    Halt,
+
+    /// Skip over the invalid data and continue.
+    Skip,
+
+    /// Return appropriate output data that indicates an error (e.g. U+FFFD or '?'), and continue.
+    Replace,
 }

@@ -79,6 +79,10 @@ impl Encoding for Utf8Encode {
         }
         Some(Ok(out))
     }
+
+    fn replacement(&self) -> Vec<u8> {
+        vec![0xEF, 0xBF, 0xBD]  // U+FFFD (::std::char::REPLACEMENT_CHARACTER) in UTF-8
+    }
 }
 
 pub struct Utf8Decode;
@@ -207,5 +211,9 @@ impl Encoding for Utf8Decode {
         }
 
         Some(Ok(utils::u32_to_bytes(codepoint, true)))
+    }
+
+    fn replacement(&self) -> Vec<u8> {
+        utils::unicode_replacement()
     }
 }

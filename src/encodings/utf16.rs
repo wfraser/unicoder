@@ -75,6 +75,10 @@ impl Encoding for Utf16Encode {
             None => None,
         }
     }
+
+    fn replacement(&self) -> Vec<u8> {
+        utils::u16_to_bytes(::std::char::REPLACEMENT_CHARACTER as u16, self.big_endian)
+    }
 }
 
 pub struct Utf16Decode {
@@ -208,5 +212,9 @@ impl Encoding for Utf16Decode {
             debug!("one-unit code point");
             Some(Ok(utils::u32_to_bytes(first_codeunit as u32, true)))
         }
+    }
+
+    fn replacement(&self) -> Vec<u8> {
+        utils::unicode_replacement()
     }
 }

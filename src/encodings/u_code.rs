@@ -124,6 +124,10 @@ impl Encoding for UCodeDecode {
 
         Some(Ok(utils::u32_to_bytes(codepoint, true)))
     }
+
+    fn replacement(&self) -> Vec<u8> {
+        utils::unicode_replacement()
+    }
 }
 
 pub struct UCodeEncode;
