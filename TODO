@@ -1,0 +1,8 @@
+other encodings to implement:
+ISO 8859 variants
+CP1252
+UTF7
+ASCII with box drawing characters (CP437?)
+base64
+uuencode/uudecode
+c / html / java / etc. escapes?
