@@ -2,6 +2,7 @@
 extern crate log;
 extern crate ucd;
 extern crate unicode_names;
+extern crate unicode_normalization;
 
 use std::collections::VecDeque;
 use std::env;

@@ -6,6 +6,9 @@ pub use self::hex::*;
 mod iso8859;
 pub use self::iso8859::*;
 
+mod normalize;
+pub use self::normalize::*;
+
 mod null;
 pub use self::null::*;
 
@@ -38,9 +41,10 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 12] = [
+const MAP: [(&'static str, CodeFunctions); 13] = [
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
+    entry!("normalize" => Normalize),
     entry!("null" => Null),
     entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),

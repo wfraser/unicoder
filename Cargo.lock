@@ -4,6 +4,7 @@ version = "0.1.0"
 dependencies = [
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ucd 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-normalization 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode_names 0.1.7 (git+https://github.com/antifuchs/unicode_names?branch=fix-for-rust-1-10)",
 ]
 
@@ -18,6 +19,11 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "unicode-normalization"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "unicode_names"
 version = "0.1.7"
 source = "git+https://github.com/antifuchs/unicode_names?branch=fix-for-rust-1-10#65bde7973ab5e947be403ec66edf765c33eeaa61"
@@ -25,4 +31,5 @@ source = "git+https://github.com/antifuchs/unicode_names?branch=fix-for-rust-1-1
 [metadata]
 "checksum log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "ab83497bf8bf4ed2a74259c1c802351fcd67a65baa86394b6ba73c36f4838054"
 "checksum ucd 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "fe4fa6e588762366f1eb4991ce59ad1b93651d0b769dfb4e4d1c5c4b943d1159"
+"checksum unicode-normalization 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "26643a2f83bac55f1976fb716c10234485f9202dcd65cfbdf9da49867b271172"
 "checksum unicode_names 0.1.7 (git+https://github.com/antifuchs/unicode_names?branch=fix-for-rust-1-10)" = "<none>"
