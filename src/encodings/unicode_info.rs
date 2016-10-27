@@ -50,8 +50,9 @@ impl Encoding for UnicodeInfo {
         println!("U+{:04X}: {}", codepoint, unicode_name(codepoint));
 
         let c = unsafe { char::from_u32_unchecked(codepoint) };
-        println!("block: {}", c.block().map(|x| name(&x)).unwrap_or("none".into()));
-        println!("category: {}", name(&c.category()));
+        println!("\tblock:    {}", c.block().map(|x| name(&x)).unwrap_or("none".into()));
+        println!("\tcategory: {}", name(&c.category()));
+        println!("\tscript:   {}", c.script().map(|x| name(&x)).unwrap_or("none".into()));
 
         Some(Ok(bytes))
     }
