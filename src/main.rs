@@ -1,3 +1,5 @@
+#![allow(unknown_lints)] // allow Clippy lints to be referenced.
+
 #[macro_use]
 extern crate log;
 extern crate ucd;

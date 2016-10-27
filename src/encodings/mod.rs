@@ -1,5 +1,8 @@
 use super::encoding::*;
 
+mod base64;
+pub use self::base64::*;
+
 mod hex;
 pub use self::hex::*;
 
@@ -21,6 +24,9 @@ pub use self::unicode_info::*;
 mod utf16;
 pub use self::utf16::*;
 
+mod utf7;
+pub use self::utf7::*;
+
 mod utf8;
 pub use self::utf8::*;
 
@@ -41,7 +47,7 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 13] = [
+const MAP: [(&'static str, CodeFunctions); 15] = [
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
     entry!("normalize" => Normalize),
@@ -52,8 +58,10 @@ const MAP: [(&'static str, CodeFunctions); 13] = [
     entry!("un_iso8859" => Iso8859Decode),
     entry!("un_ucode" => UCodeDecode),
     entry!("un_utf16" => Utf16Decode),
+    entry!("un_utf7" => Utf7Decode),
     entry!("un_utf8" => Utf8Decode),
     entry!("utf16" => Utf16Encode),
+    entry!("utf7" => Utf7Encode),
     entry!("utf8" => Utf8Encode),
 ];
 

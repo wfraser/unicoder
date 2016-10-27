@@ -172,8 +172,8 @@ impl Encoding for Utf8Decode {
 
         if nbytes > 1 {
             debug!("{:#x}: initial byte of {}-byte sequence", first_byte, nbytes);
+            debug!("{:032b}, {} bytes, shift = {}, buffer = {:?}", codepoint, nbytes, 6 * (nbytes - 1), &bytes);
         }
-        debug!("{:032b}, {} bytes, shift = {}, buffer = {:?}", codepoint, nbytes, 6 * (nbytes - 1), &bytes);
 
         for i in 1..nbytes {
             let byte = match input.get_byte() {

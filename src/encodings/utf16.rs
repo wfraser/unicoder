@@ -27,49 +27,54 @@ impl EncodingStatics for Utf16Encode {
     }
 }
 
+impl Utf16Encode {
+    pub fn encode_codepoint(codepoint: u32, big_endian: bool) -> Result<Vec<u8>, CodeError> {
+        // Note: UTF-16's names for the "high" and "low" surrogate are somewhat confusing.
+        // "High" surrogates are in the range 0xD800 - 0xDBFF.
+        // "Low" surrogates are in the range 0xDC00 - 0xDFFF.
+        // The names are because the "low" surrogate encodes the 10 low-order bits of the code
+        // point, and the "high" surrogate encodes the 10 high-order bits.
+
+        if codepoint >= 0xD800 && codepoint <= 0xDFFF {
+            // Forbidden range.
+            let which = if codepoint < 0xDC00 {
+                "low"
+            } else {
+                "high"
+            };
+            error!("cannot UTF-16 encode {} surrogate code point U+{:04X}", which, codepoint);
+            Err(CodeError::new(format!("cannot UTF-16 encode {} surrogate code point", which))
+                          .with_bytes(utils::u32_to_bytes(codepoint, true)))
+        } else if codepoint <= 0xFFFF {
+            // Identity encoding.
+            debug!("UTF-16 trivial encoding");
+            Ok(utils::u16_to_bytes(codepoint as u16, big_endian))
+        } else if codepoint <= 0x10_FFFF {
+            // Surrogate pair encoding (codepoint >= 0x10000)
+            debug!("UTF-16 surrogate pair encoding");
+            let subtracted = codepoint - 0x1_0000;
+            let high_surrogate = (0xD800 + (subtracted >> 10)) as u16;
+            let low_surrogate = (0xDC00 + (subtracted & 0x3FF)) as u16;
+            debug!("high = {:#X}", high_surrogate);
+            debug!("low  = {:#X}", low_surrogate);
+            let mut vec = utils::u16_to_bytes(high_surrogate, big_endian);
+            vec.extend_from_slice(&utils::u16_to_bytes(low_surrogate, big_endian));
+            Ok(vec)
+        } else {
+            // Codepoint > 0x10_FFFF
+            error!("cannot UTF-16 encode out-of-range code point U+{:04X}", codepoint);
+            Err(CodeError::new("cannot UTF-16 encode out-of-range code point")
+                          .with_bytes(utils::u32_to_bytes(codepoint, true)))
+        }
+    }
+}
+
 impl Encoding for Utf16Encode {
     fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         match input.get_bytes(4) {
             Some(Ok(bytes)) => {
                 let codepoint = utils::u32_from_bytes(&bytes, true);
-
-                // Note: UTF-16's names for the "high" and "low" surrogate are somewhat confusing.
-                // "High" surrogates are in the range 0xD800 - 0xDBFF.
-                // "Low" surrogates are in the range 0xDC00 - 0xDFFF.
-                // The names are because the "low" surrogate encodes the 10 low-order bits of the code
-                // point, and the "high" surrogate encodes the 10 high-order bits.
-
-                if codepoint >= 0xD800 && codepoint <= 0xDFFF {
-                    // Forbidden range.
-                    let which = if codepoint < 0xDC00 {
-                        "low"
-                    } else {
-                        "high"
-                    };
-                    error!("cannot UTF-16 encode {} surrogate code point U+{:04X}", which, codepoint);
-                    Some(Err(CodeError::new(format!("cannot UTF-16 encode {} surrogate code point", which))
-                                       .with_bytes(bytes)))
-                } else if codepoint <= 0xFFFF {
-                    // Identity encoding.
-                    debug!("UTF-16 trivial encoding");
-                    Some(Ok(utils::u16_to_bytes(codepoint as u16, self.big_endian)))
-                } else if codepoint <= 0x10_FFFF {
-                    // Surrogate pair encoding (codepoint >= 0x10000)
-                    debug!("UTF-16 surrogate pair encoding");
-                    let subtracted = codepoint - 0x1_0000;
-                    let high_surrogate = (0xD800 + (subtracted >> 10)) as u16;
-                    let low_surrogate = (0xDC00 + (subtracted & 0x3FF)) as u16;
-                    debug!("high = {:#X}", high_surrogate);
-                    debug!("low  = {:#X}", low_surrogate);
-                    let mut vec = utils::u16_to_bytes(high_surrogate, self.big_endian);
-                    vec.extend_from_slice(&utils::u16_to_bytes(low_surrogate, self.big_endian));
-                    Some(Ok(vec))
-                } else {
-                    // Codepoint > 0x10_FFFF
-                    error!("cannot UTF-16 encode out-of-range code point U+{:04X}", codepoint);
-                    Some(Err(CodeError::new("cannot UTF-16 encode out-of-range code point")
-                                       .with_bytes(bytes)))
-                }
+                Some(Self::encode_codepoint(codepoint, self.big_endian))
             },
             Some(Err(e)) => Some(Err(e)),
             None => None,
@@ -145,7 +150,7 @@ impl Utf16Decode {
 }
 
 /// Returns the surrogate value shifted appropriately if it is a high surrogate, or else None.
-fn high_surrogate(codeunit: u16) -> Option<u32> {
+pub fn high_surrogate(codeunit: u16) -> Option<u32> {
     if codeunit >= 0xD800 && codeunit <= 0xDBFF {
         Some(((codeunit - 0xD800) as u32) << 10)
     } else {
@@ -154,7 +159,7 @@ fn high_surrogate(codeunit: u16) -> Option<u32> {
 }
 
 /// Returns the surrogate value shifted appropriately if it is a low surrogate, or else None.
-fn low_surrogate(codeunit: u16) -> Option<u32> {
+pub fn low_surrogate(codeunit: u16) -> Option<u32> {
     if codeunit >= 0xDC00 && codeunit <= 0xDFFF {
         Some((codeunit - 0xDC00) as u32)
     } else {

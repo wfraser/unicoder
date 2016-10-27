@@ -39,6 +39,14 @@ pub fn u16_to_bytes(input: u16, big_endian: bool) -> Vec<u8> {
     out
 }
 
+pub fn u16_from_bytes(bytes: &[u8], big_endian: bool) -> u16 {
+    if big_endian {
+        ((bytes[0] as u16) << 8) | (bytes[1] as u16)
+    } else {
+        ((bytes[1] as u16) << 8) | (bytes[0] as u16)
+    }
+}
+
 pub fn unicode_replacement() -> Vec<u8> {
     // Basically this:
     //u32_to_bytes(::std::char::REPLACEMENT_CHARACTER as u32, true)
