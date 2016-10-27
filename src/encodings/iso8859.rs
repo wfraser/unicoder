@@ -110,11 +110,11 @@ pub struct Iso8859Encode {
 
 fn part_number(s: &str) -> Result<u8, String> {
     match s {
-        "" => Err(format!("no ISO 8859-N part specified")),
+        "" => Err("no ISO 8859-N part specified".into()),
         "1" | "2" | "3" | "4" | "5" | "6" | "15" => Ok(s.parse().unwrap()),
         "7" | "8" | "9" | "10" | "11" | "13" | "14" | "16" =>
             Err(format!("ISO 8859-{} not yet implemented", s)),
-        _ => Err(format!("invalid option"))
+        _ => Err("invalid option".into())
     }
 }
 

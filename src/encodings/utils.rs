@@ -1,3 +1,4 @@
+#[allow(needless_range_loop)]
 pub fn u32_from_bytes(bytes: &[u8], big_endian: bool) -> u32 {
     let mut out = 0u32;
     for i in 0 .. 4 {

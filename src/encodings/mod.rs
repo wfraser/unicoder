@@ -59,7 +59,7 @@ const MAP: [(&'static str, CodeFunctions); 13] = [
 
 fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
     let lower = name.to_lowercase();
-    for pair in MAP.iter() {
+    for pair in &MAP {
         if pair.0 == &lower {
             return Ok(pair.1);
         }
@@ -85,7 +85,7 @@ pub fn print_help(name: &str) -> Result<(), String> {
 }
 
 pub fn print_all_help() {
-    for pair in MAP.iter() {
+    for pair in &MAP {
         println!("{}:", pair.0);
         (pair.1.print_help)();
         println!("");

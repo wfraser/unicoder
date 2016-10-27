@@ -99,7 +99,7 @@ fn main() {
 
     while !args.is_empty() {
         let arg = args.pop_front().unwrap();
-        if arg.starts_with("-") {
+        if arg.starts_with('-') {
             if !arg.starts_with("--") {
                 for c in arg.chars().skip(1) {
                     match c {
@@ -178,7 +178,7 @@ fn main() {
     let mut encoder: Box<Encoder> = Box::new(Encoder::new(stdin, Box::new(IdentityEncoding), "stdin", error_policy));
     for encoding_name in args {
         debug!("encoding: {}", encoding_name);
-        let parts: Vec<&str> = encoding_name.splitn(2, ",").collect();
+        let parts: Vec<&str> = encoding_name.splitn(2, ',').collect();
         let encoding = match get_encoding(parts[0], parts.get(1).unwrap_or(&"")) {
             Ok(enc) => enc,
             Err(msg) => {

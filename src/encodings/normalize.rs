@@ -99,7 +99,7 @@ impl Encoding for Normalize {
             input_buffer.extend_from_slice(&bytes);
         }
 
-        let iterator = chars.iter().map(|refchar| *refchar);
+        let iterator = chars.iter().cloned();
         let normalized: Vec<char> = match self.form {
             NormalizationForm::NFC => iterator.nfc().collect(),
             NormalizationForm::NFKC => iterator.nfkc().collect(),

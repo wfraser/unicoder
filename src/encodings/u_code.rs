@@ -85,7 +85,7 @@ impl Encoding for UCodeDecode {
         // Read a minimum of 4 hex digits.
         match input.get_bytes(4) {
             Some(Ok(read)) => {
-                bytes.extend(&read);
+                bytes.extend_from_slice(&read);
                 for (i, byte) in read.iter().enumerate() {
                     let value = match hex_digit_value(*byte) {
                         Some(v) => v,

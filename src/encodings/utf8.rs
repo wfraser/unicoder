@@ -112,7 +112,7 @@ fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<Error>>)
     } else if last_byte >= 0b11100000 {
         msg.push_str(&format!(" due to unexpected initial byte {:#x}", last_byte));
     } else {
-        msg.push_str(&format!(" due to EOF"));
+        msg.push_str(" due to EOF");
     }
 
     let mut code_error = CodeError::new(msg).with_bytes(bytes);
@@ -183,12 +183,8 @@ impl Encoding for Utf8Decode {
             };
             bytes.push(byte);
 
-            if byte < 0b10000000 {
-                // unexpected single-byte
-                input.unget_byte(byte);
-                return incomplete_error(nbytes, bytes, None);
-            } else if byte >= 0b11000000 {
-                // unexpected initial byte
+            if byte < 0b10000000 || byte >= 0b11000000 {
+                // unexpected single-byte or initial byte
                 input.unget_byte(byte);
                 return incomplete_error(nbytes, bytes, None);
             } else {

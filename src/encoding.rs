@@ -236,7 +236,7 @@ impl EncodingInput for BufferedInput {
                                                   .with_inner(e)));
                     },
                     None => {
-                        if result.len() == 0 {
+                        if result.is_empty() {
                             return None;
                         } else {
                             error!("premature EOF in BufferedInput: wanted {} bytes, only got {}",

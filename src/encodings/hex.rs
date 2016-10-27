@@ -13,11 +13,11 @@ impl HexEncode {
     fn hex_char(&self, quad: u8) -> u8 {
         assert!(quad < 16);
         if quad < 10 {
-            ('0' as u8) + quad
+            b'0' + quad
         } else if self.uppercase {
-            ('A' as u8) + quad - 10
+            b'A' + quad - 10
         } else {
-            ('a' as u8) + quad - 10
+            b'a' + quad - 10
         }
     }
 }
@@ -75,11 +75,11 @@ impl Encoding for HexDecode {
                         // skip whitespace
                         continue;
                     } else if c >= '0' && c <= '9' {
-                        byte - ('0' as u8)
+                        byte - b'0'
                     } else if c >= 'a' && c <= 'f' {
-                        byte - ('a' as u8) + 10
+                        byte - b'a' + 10
                     } else if c >= 'A' && c <= 'F' {
-                        byte - ('A' as u8) + 10
+                        byte - b'A' + 10
                     } else {
                         error!("out of range: {:?}", c);
                         return Some(Err(CodeError::new("out of range")
