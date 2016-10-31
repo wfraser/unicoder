@@ -15,8 +15,11 @@ impl EncodingStatics for Null {
 
 impl Encoding for Null {
     fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
-        while input.get_byte().is_some() {
-            // do nothing
+        while let Some(result) = input.get_byte() {
+            if let Err(e) = result {
+                return Some(Err(e));
+            }
+            // else: do nothing
         }
         None
     }
