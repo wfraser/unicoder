@@ -50,6 +50,7 @@ impl Utf7Encode {
 }
 
 impl Encoding for Utf7Encode {
+    #[allow(match_overlapping_arm, match_same_arms)]
     fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut out = vec![];
         loop {
@@ -65,7 +66,6 @@ impl Encoding for Utf7Encode {
             debug!("encoding code point U+{:04X}", codepoint);
 
             let direct_encoding = if codepoint < 0x80 {
-                #[allow(match_overlapping_arm, match_same_arms)]
                 match codepoint as u8 {
                     b'+' | b'\\' | b'~' => None,
                     b' ' | b'\t' | b'\r' | b'\n' | 33 ... 125 => Some(codepoint as u8),
