@@ -1,5 +1,6 @@
 use super::super::encoding::*;
 
+#[derive(Debug)]
 pub struct Base64 {
     pub code62: u8,
     pub code63: u8,
@@ -76,7 +77,10 @@ impl Base64 {
         }
 
         if let Some(byte) = self.pad {
-            for _ in 0 .. out.len() % 3 {
+            let npad = ((out.len() + 3) & !3) - out.len();
+            debug!("{} output chars, adding {} padding", out.len(), npad);
+            assert!(npad != 3);
+            for _ in 0 .. npad {
                 out.push(byte);
             }
         }
@@ -152,5 +156,132 @@ impl Base64 {
         }
 
         Ok(out)
+    }
+}
+
+pub struct Base64Encode {
+    base64: Base64,
+    line_width: Option<usize>,
+    output_line_width: usize,
+}
+
+fn parse_single_byte(s: &str) -> Result<u8, String> {
+    if s.len() > 1 {
+        Err(format!("argument must be a single character, not {:?}", s))
+    } else {
+        let c = s.chars().next();
+        if c.is_none() {
+            Err("argument must be a single character, not empty".into())
+        } else {
+            let c = c.unwrap();
+            if (c as u32) > 0xFF {
+                Err(format!("argument needs to fit in a single byte (0-255), not {}", c as u32))
+            } else {
+                Ok((c as u32) as u8)
+            }
+        }
+    }
+}
+
+impl EncodingStatics for Base64Encode {
+    fn new(options: &str) -> Result<Box<Encoding>, String> {
+        let mut code62 = b'+';
+        let mut code63 = b'/';
+        let mut pad = Some(b'=');
+        let mut width = Some(64);
+
+        if options != "" {
+            for arg in options.split(',') {
+                let parts: Vec<&str> = arg.split('=').collect();
+                match parts[0] {
+                    "62" => { code62 = try!(parse_single_byte(parts[1])); },
+                    "63" => { code63 = try!(parse_single_byte(parts[1])); },
+                    "padding" => {
+                        if parts[1] == "none" {
+                            pad = None;
+                        } else {
+                            pad = Some(try!(parse_single_byte(parts[1])));
+                        }
+                    },
+                    "width" => {
+                        if parts[1] == "none" {
+                            width = None;
+                        } else {
+                            width = match parts[1].parse() {
+                                Ok(w) => Some(w),
+                                Err(e) => {
+                                    return Err(format!("width must be a number: {}", e));
+                                }
+                            };
+                        }
+                    }
+                    _ => {
+                        return Err(format!("unrecognized argument {:?}", arg));
+                    }
+                }
+            }
+        }
+        debug!("base64 settings: 62={:?} 63={:?} pad={:?}", code62 as char, code63 as char, pad.map(|c| c as char));
+
+        Ok(Box::new(Base64Encode {
+            base64: Base64 {
+                code62: code62,
+                code63: code63,
+                pad: pad,
+            },
+            line_width: width,
+            output_line_width: 0,
+        }))
+    }
+
+    fn print_help() {
+        println!("Encodes data as Base64.");
+        println!("Options:");
+        println!("  62=<character>      Which character to encode 62 as? (default: '+')");
+        println!("  63=<character>      Which character to encode 63 as? (default: '/')");
+        println!("  padding=<character> Which character to use for padding? (default: '=')");
+        println!("                          Can also be set to 'none' to disable padding.");
+        println!("  width=<line width>  How long to make lines before breaking with \"<CR><LF>\"?");
+        println!("                          Default is 64. Can also be set to 'none' to disable wrapping.");
+    }
+}
+
+impl Encoding for Base64Encode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        let mut bytes = Vec::<u8>::new();
+        for i in 0..3 {
+            match input.get_byte() {
+                Some(Ok(byte)) => { bytes.push(byte); },
+                Some(Err(e)) => { return Some(Err(CodeError::new("error getting byte")
+                                                            .with_bytes(bytes)
+                                                            .with_inner(e))); },
+                None => {
+                    if i == 0 {
+                        return None;
+                    } else {
+                        break;
+                    }
+                },
+            };
+        }
+        debug!("encoding {} bytes", bytes.len());
+
+        let encoded = self.base64.encode(&bytes);
+
+        if let Some(line_width) = self.line_width {
+            if encoded.len() + self.output_line_width >= line_width {
+                let mut out = vec![];
+                out.extend_from_slice(&encoded[0 .. line_width - self.output_line_width]);
+                out.push(b'\n');
+                out.extend_from_slice(&encoded[line_width - self.output_line_width ..]);
+                self.output_line_width = encoded.len() - (line_width - self.output_line_width);
+                Some(Ok(out))
+            } else {
+                self.output_line_width += encoded.len();
+                Some(Ok(encoded))
+            }
+        } else {
+            Some(Ok(encoded))
+        }
     }
 }
