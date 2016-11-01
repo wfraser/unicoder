@@ -29,7 +29,13 @@ impl Base64 {
                 b'A' ... b'Z' => Ok(n - b'A'),
                 b'a' ... b'z' => Ok(n - b'a' + 26),
                 b'0' ... b'9' => Ok(n - b'0' + 52),
-                _ => Err(format!("invalid Base64 character {:#04X}", n))
+                _ => {
+                    if self.pad == Some(n) {
+                        Err(format!("unexpected pad character {:?}", n as char))
+                    } else {
+                        Err(format!("invalid Base64 character {:?}", n as char))
+                    }
+                },
             }
         }
     }
@@ -92,6 +98,7 @@ impl Base64 {
     pub fn decode(&self, bytes: &[u8]) -> Result<Vec<u8>, (Vec<u8>, CodeError)> {
         let mut out = vec![];
 
+        // Look for padding at the end and don't consider it part of the data.
         let data_len = if let Some(pad) = self.pad {
             if bytes[bytes.len() - 1] == pad {
                 if bytes[bytes.len() - 2] == pad {
@@ -124,35 +131,33 @@ impl Base64 {
             // 3: qrstuvwx
             //    00111111              & 3F
 
-            debug!("value: {:#04X}", value);
             match i % 4 {
                 0 => {
                     partial = value << 2;
                 },
                 1 => {
                     partial |= (value & 0x30) >> 4;
-                    debug!("out: {:#04X}", partial);
                     out.push(partial);
                     partial = (value & 0x0F) << 4;
                 },
                 2 => {
                     partial |= (value & 0x3C) >> 2;
-                    debug!("out: {:#04X}", partial);
                     out.push(partial);
                     partial = (value & 0x03) << 6;
                 },
                 3 => {
                     partial |= value & 0x3F;
-                    debug!("out: {:#04X}", partial);
                     out.push(partial);
                 }
                 _ => unreachable!()
             }
         }
 
-        if self.pad.is_none() && data_len % 4 != 0 {
-            debug!("out: {:#02X}", partial);
+        if data_len % 4 != 0 {
             out.push(partial);
+            if self.pad.is_some() && bytes.len() % 4 != 0 {
+                return Err((out, CodeError::new("incomplete Base64 without required padding")));
+            }
         }
 
         Ok(out)
@@ -183,41 +188,69 @@ fn parse_single_byte(s: &str) -> Result<u8, String> {
     }
 }
 
+struct ParseResult<'a> {
+    code62: u8,
+    code63: u8,
+    pad: Option<u8>,
+    leftover_options: Vec<&'a str>,
+}
+
+fn parse_options(options: &str) -> Result<ParseResult, String> {
+    let mut result = ParseResult {
+        code62: b'+',
+        code63: b'/',
+        pad: Some(b'='),
+        leftover_options: vec![],
+    };
+    for arg in options.split(',') {
+        let parts: Vec<&str> = arg.split('=').collect();
+        match parts[0] {
+            "62" => { result.code62 = try!(parse_single_byte(parts[1])); },
+            "63" => { result.code63 = try!(parse_single_byte(parts[1])); },
+            "pad" => {
+                result.pad = if parts[1] == "none" {
+                    None
+                } else {
+                    Some(try!(parse_single_byte(parts[1])))
+                };
+            },
+            _ => {
+                result.leftover_options.push(arg);
+            }
+        }
+    }
+    Ok(result)
+}
+
 impl EncodingStatics for Base64Encode {
     fn new(options: &str) -> Result<Box<Encoding>, String> {
-        let mut code62 = b'+';
-        let mut code63 = b'/';
-        let mut pad = Some(b'=');
         let mut width = Some(64);
 
-        if options != "" {
-            for arg in options.split(',') {
-                let parts: Vec<&str> = arg.split('=').collect();
-                match parts[0] {
-                    "62" => { code62 = try!(parse_single_byte(parts[1])); },
-                    "63" => { code63 = try!(parse_single_byte(parts[1])); },
-                    "padding" => {
-                        if parts[1] == "none" {
-                            pad = None;
-                        } else {
-                            pad = Some(try!(parse_single_byte(parts[1])));
-                        }
-                    },
-                    "width" => {
-                        if parts[1] == "none" {
-                            width = None;
-                        } else {
-                            width = match parts[1].parse() {
-                                Ok(w) => Some(w),
-                                Err(e) => {
-                                    return Err(format!("width must be a number: {}", e));
-                                }
-                            };
-                        }
+        let ParseResult {
+            code62,
+            code63,
+            pad,
+            leftover_options,
+        } = try!(parse_options(options));
+
+        for arg in leftover_options {
+            let parts: Vec<&str> = arg.split('=').collect();
+            match parts[0] {
+                "" if parts.len() == 1 => (),
+                "width" => {
+                    if parts[1] == "none" {
+                        width = None;
+                    } else {
+                        width = match parts[1].parse() {
+                            Ok(w) => Some(w),
+                            Err(e) => {
+                                return Err(format!("width must be a number: {}", e));
+                            }
+                        };
                     }
-                    _ => {
-                        return Err(format!("unrecognized argument {:?}", arg));
-                    }
+                },
+                _ => {
+                    return Err(format!("unrecognized argument {:?}", arg));
                 }
             }
         }
@@ -239,7 +272,7 @@ impl EncodingStatics for Base64Encode {
         println!("Options:");
         println!("  62=<character>      Which character to encode 62 as? (default: '+')");
         println!("  63=<character>      Which character to encode 63 as? (default: '/')");
-        println!("  padding=<character> Which character to use for padding? (default: '=')");
+        println!("  pad=<character>     Which character to use for padding? (default: '=')");
         println!("                          Can also be set to 'none' to disable padding.");
         println!("  width=<line width>  How long to make lines before breaking with \"<CR><LF>\"?");
         println!("                          Default is 64. Can also be set to 'none' to disable wrapping.");
@@ -282,6 +315,126 @@ impl Encoding for Base64Encode {
             }
         } else {
             Some(Ok(encoded))
+        }
+    }
+}
+
+pub struct Base64Decode {
+    base64: Base64,
+    ignore_garbage: bool,
+    stashed_error: Option<CodeError>,
+}
+
+impl EncodingStatics for Base64Decode {
+    fn new(options: &str) -> Result<Box<Encoding>, String> {
+        let ParseResult {
+            code62,
+            code63,
+            pad,
+            leftover_options,
+        } = try!(parse_options(options));
+
+        let mut ignore_garbage = false;
+        for arg in leftover_options {
+            match arg {
+                "" => (),
+                "ignore_garbage" => {
+                    ignore_garbage = true;
+                }
+                _ => {
+                    return Err(format!("unrecognized argument {:?}", arg));
+                }
+            }
+        }
+
+        debug!("base64 settings: 62={:?} 63={:?} pad={:?}", code62 as char, code63 as char, pad.map(|c| c as char));
+
+        Ok(Box::new(Base64Decode {
+            base64: Base64 {
+                code62: code62,
+                code63: code63,
+                pad: pad,
+            },
+            ignore_garbage: ignore_garbage,
+            stashed_error: None,
+        }))
+    }
+
+    fn print_help() {
+        println!("Decodes data from Base64.");
+        println!("Options:");
+        println!("  62=<character>      Which character is encoded 62 as? (default: '+')");
+        println!("  63=<character>      Which character is encoded 63 as? (default: '/')");
+        println!("  pad=<character>     Which character is used for padding? (default: '=')");
+        println!("                          Can also be set to 'none' to disable padding.");
+        println!("  ignore_garbage      Ignore characters outside the alphabet (instead of erroring).");
+    }
+}
+
+impl Encoding for Base64Decode {
+    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+        if let Some(error) = self.stashed_error.take() {
+            return Some(Err(error));
+        }
+
+        let mut buffer = vec![];
+        loop {
+            match input.get_byte() {
+                Some(Ok(byte)) => {
+                    if byte == b'\r' || byte == b'\n' {
+                        // Ignore line endings no matter what our ignore_garbage setting says.
+                        continue;
+                    } else if (byte >= b'A' && byte <= b'Z')
+                            || (byte >= b'a' && byte <= b'z')
+                            || (byte >= b'0' && byte <= b'9')
+                            || byte == self.base64.code62
+                            || byte == self.base64.code63
+                            || self.base64.pad == Some(byte) {
+                        buffer.push(byte);
+                    } else if !self.ignore_garbage {
+                        debug!("read invalid base64 character");
+                        let error = CodeError::new(format!("invalid Base64 character {:#04X}", byte))
+                                              .with_bytes(buffer.clone());
+                        if buffer.is_empty() {
+                            return Some(Err(error));
+                        } else {
+                            debug!("stashing error and processing buffered input");
+                            self.stashed_error = Some(error);
+                            break;
+                        }
+                    } else {
+                        // ignore_garbage is in effect: just skip it
+                        debug!("ignoring garbage base64 character {:?}", byte as char);
+                    }
+                },
+                Some(Err(e)) => { return Some(Err(e)); },
+                None => {
+                    debug!("got EOF, processing {} characters", buffer.len());
+                    break;
+                },
+            }
+
+            if buffer.len() == 4 {
+                debug!("got 4 characters; processing");
+                break;
+            }
+        }
+
+        if buffer.is_empty() {
+            return None;
+        }
+
+        match self.base64.decode(&buffer) {
+            Ok(bytes) => Some(Ok(bytes)),
+            Err((bytes, error)) => {
+                debug!("got {} decoded bytes and an error", bytes.len());
+                if bytes.is_empty() {
+                    Some(Err(error))
+                } else {
+                    self.stashed_error = Some(error);
+                    Some(Ok(bytes))
+                }
+            }
         }
     }
 }

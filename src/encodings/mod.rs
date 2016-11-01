@@ -47,7 +47,7 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 16] = [
+const MAP: [(&'static str, CodeFunctions); 17] = [
     entry!("base64" => Base64Encode),
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
@@ -55,6 +55,7 @@ const MAP: [(&'static str, CodeFunctions); 16] = [
     entry!("null" => Null),
     entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),
+    entry!("un_base64" => Base64Decode),
     entry!("un_hex" => HexDecode),
     entry!("un_iso8859" => Iso8859Decode),
     entry!("un_ucode" => UCodeDecode),
