@@ -100,8 +100,8 @@ impl Base64 {
 
         // Look for padding at the end and don't consider it part of the data.
         let data_len = if let Some(pad) = self.pad {
-            if bytes[bytes.len() - 1] == pad {
-                if bytes[bytes.len() - 2] == pad {
+            if bytes.len() > 1 && bytes[bytes.len() - 1] == pad {
+                if bytes.len() > 2 && bytes[bytes.len() - 2] == pad {
                     bytes.len() - 2
                 } else {
                     bytes.len() - 1
@@ -154,7 +154,9 @@ impl Base64 {
         }
 
         if data_len % 4 != 0 {
-            out.push(partial);
+            if self.pad.is_none() {
+                out.push(partial);
+            }
             if self.pad.is_some() && bytes.len() % 4 != 0 {
                 return Err((out, CodeError::new("incomplete Base64 without required padding")));
             }
@@ -162,6 +164,45 @@ impl Base64 {
 
         Ok(out)
     }
+}
+
+#[test]
+fn test_base64_decode() {
+    let mut base64 = Base64 {
+        code62: b'+',
+        code63: b'/',
+        pad: Some(b'='),
+    };
+    assert_eq!(b"f", base64.decode(b"Zg==").unwrap().as_slice());
+    assert_eq!(b"fo", base64.decode(b"Zm8=").unwrap().as_slice());
+    assert_eq!(b"foo", base64.decode(b"Zm9v").unwrap().as_slice());
+    assert_eq!(b"foo!", base64.decode(b"Zm9vIQ==").unwrap().as_slice());
+    assert_eq!(b"", base64.decode(b"").unwrap().as_slice());
+
+    assert_eq!(b"", base64.decode(b"=").err().unwrap().0.as_slice());
+    assert_eq!(b"", base64.decode(b"==").err().unwrap().0.as_slice());
+    assert_eq!(b"", base64.decode(b"Z===").err().unwrap().0.as_slice());
+    assert_eq!(b"foo", base64.decode(b"Zm9vI===").err().unwrap().0.as_slice());
+
+    base64.pad = None;
+    assert_eq!(&[0xFC], base64.decode(b"/").unwrap().as_slice());
+}
+
+#[test]
+fn test_base64_encode() {
+    let mut base64 = Base64 {
+        code62: b'+',
+        code63: b'/',
+        pad: Some(b'='),
+    };
+    assert_eq!(b"Zg==", base64.encode(b"f").as_slice());
+    assert_eq!(b"Zm8=", base64.encode(b"fo").as_slice());
+    assert_eq!(b"Zm9v", base64.encode(b"foo").as_slice());
+    assert_eq!(b"Zm9vIQ==", base64.encode(b"foo!").as_slice());
+    assert_eq!(b"", base64.encode(b"").as_slice());
+
+    base64.pad = None;
+    assert_eq!(b"/A", base64.encode(&[0xFC]).as_slice());
 }
 
 pub struct Base64Encode {
@@ -186,6 +227,14 @@ fn parse_single_byte(s: &str) -> Result<u8, String> {
             }
         }
     }
+}
+
+#[test]
+fn test_parse_single_byte() {
+    assert_eq!(Ok(0x30), parse_single_byte("0"));
+    assert!(parse_single_byte("").is_err());
+    assert!(parse_single_byte("00").is_err());
+    assert!(parse_single_byte("ü").is_err());
 }
 
 struct ParseResult<'a> {
