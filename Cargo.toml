@@ -11,4 +11,4 @@ unicode-normalization = "0.1"
 
 [dependencies.unicode_names]
 git = "https://github.com/antifuchs/unicode_names"
-branch = "fix-for-rust-1-10"
+branch = "update-to-unicode-8.0"
