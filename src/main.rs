@@ -43,31 +43,32 @@ struct DebugOutput {
 }
 
 impl log::Log for DebugOutput {
-    fn enabled(&self, metadata: &log::LogMetadata) -> bool {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
         if !self.debug_output {
-            metadata.level() <= log::LogLevel::Warn
+            metadata.level() <= log::Level::Warn
         } else {
             true
         }
     }
 
-    fn log(&self, record: &log::LogRecord) {
+    fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stdout(), "{}: {}: {}", record.target(), record.level(), record.args()).unwrap();
+            println!("{}: {}: {}", record.target(), record.level(), record.args());
         }
     }
+
+    fn flush(&self) {}
 }
 
 impl DebugOutput {
     pub fn init(debug: bool) {
-        log::set_logger(|max_log_level| {
-            max_log_level.set(if debug {
-                log::LogLevelFilter::Debug
-            } else {
-                log::LogLevelFilter::Warn
-            });
-            Box::new(DebugOutput { debug_output: debug })
-        }).expect("failed to initialize logging");
+        log::set_max_level(if debug {
+            log::LevelFilter::Debug
+        } else {
+            log::LevelFilter::Warn
+        });
+        log::set_boxed_logger(Box::new(DebugOutput { debug_output: debug }))
+            .expect("failed to initialize logging");
     }
 }
 

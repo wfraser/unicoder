@@ -15,6 +15,9 @@ pub use self::normalize::*;
 mod null;
 pub use self::null::*;
 
+mod shift_jis;
+pub use self::shift_jis::*;
+
 mod u_code;
 pub use self::u_code::*;
 
@@ -47,17 +50,19 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 17] = [
+const MAP: [(&'static str, CodeFunctions); 19] = [
     entry!("base64" => Base64Encode),
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
     entry!("normalize" => Normalize),
     entry!("null" => Null),
+    entry!("shift_jis" => ShiftJISEncode),
     entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("un_base64" => Base64Decode),
     entry!("un_hex" => HexDecode),
     entry!("un_iso8859" => Iso8859Decode),
+    entry!("un_shift_jis" => ShiftJISDecode),
     entry!("un_ucode" => UCodeDecode),
     entry!("un_utf16" => Utf16Decode),
     entry!("un_utf7" => Utf7Decode),

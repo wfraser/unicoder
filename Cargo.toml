@@ -4,14 +4,14 @@ version = "0.1.0"
 authors = ["Bill Fraser <wfraser@codewise.org>"]
 
 [dependencies]
-log = "0.3"
+log = { version = "0.4", features = ["std"] }
 ucd = "0.1"
 #unicode_names = "0.1"
 unicode-normalization = "0.1"
 
 [dependencies.unicode_names]
-git = "https://github.com/antifuchs/unicode_names"
-branch = "fix-for-rust-1-10"
+git = "https://github.com/Jokler/unicode_names"
+branch = "update-to-latest-unicode"
 
 [profile.release]
 lto = true
