@@ -2,6 +2,7 @@ use super::super::encoding::*;
 
 pub struct HexEncode {
     uppercase: bool,
+    done: bool,
 }
 
 impl HexEncode {
@@ -26,6 +27,7 @@ impl EncodingStatics for HexEncode {
     fn new(_options: &str) -> Result<Box<Encoding>, String> {
         Ok(Box::new(HexEncode {
             uppercase: false,
+            done: false,
         }))
     }
 
@@ -44,7 +46,15 @@ impl Encoding for HexEncode {
                 Some(Ok(vec![high, low, ' ' as u8]))
             },
             Some(Err(e)) => Some(Err(e)),
-            None => None,
+            None => {
+                if self.done {
+                    self.done = false;
+                    None
+                } else {
+                    self.done = true;
+                    Some(Ok(vec![b'\n']))
+                }
+            }
         }
     }
 }
