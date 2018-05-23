@@ -76,7 +76,7 @@ const MAPPING_6: [u32; 95] = [
      UNDEF,  UNDEF,  UNDEF,  UNDEF,  UNDEF,  UNDEF,  UNDEF,  UNDEF,
 ];
 
-// TODO: parts 6,7,8,9,10,11,13,14,16
+// TODO: parts 7,8,9,10,11,13,14,16
 
 // Rather than writing out the whole table for this one (which would be mostly an identity
 // mapping), this is just specifying the code points that are different.

@@ -184,7 +184,7 @@ impl Encoding for Utf7Decode {
                         }
 
                         if input_buffer.len() == 8 {
-                            debug!("decoding input buffer: {:?}", input_buffer);
+                            debug!("decoding input buffer: {:x?}", input_buffer);
                             // at this point we have 6 complete UTF-16 code units.
                             let utf16_bytes = match self.base64.decode(&input_buffer) {
                                 Ok(bytes) => {
@@ -197,7 +197,7 @@ impl Encoding for Utf7Decode {
                                 }
                             };
 
-                            debug!("base64-decoded into: {:?}", utf16_bytes);
+                            debug!("base64-decoded into: {:x?}", utf16_bytes);
                             for i in 0..3 {
                                 let code_unit = utils::u16_from_bytes(&utf16_bytes[i*2 .. (i+1)*2], true);
                                 decoded_buffer.push(code_unit);
@@ -231,7 +231,7 @@ impl Encoding for Utf7Decode {
                             decoded_buffer.push(code_unit);
                         }
                     }
-                    debug!("utf16 code units: {:?}", decoded_buffer);
+                    debug!("utf16 code units: {:x?}", decoded_buffer);
 
                     // Now decode the utf-16 code units.
                     let mut partial = 0u32;

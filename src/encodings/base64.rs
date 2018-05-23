@@ -42,7 +42,7 @@ impl Base64 {
 
     pub fn encode(&self, bytes: &[u8]) -> Vec<u8> {
         let mut out = vec![];
-        debug!("in: {:?}", bytes);
+        debug!("in: {:x?}", bytes);
 
         // 0: abcdefgh
         //    11111100              & 0xFC >> 2
@@ -91,7 +91,7 @@ impl Base64 {
             }
         }
 
-        debug!("out = {:?}", out);
+        debug!("out = {:x?}", out);
         out
     }
 

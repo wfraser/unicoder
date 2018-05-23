@@ -172,7 +172,7 @@ impl Encoding for Utf8Decode {
 
         if nbytes > 1 {
             debug!("{:#x}: initial byte of {}-byte sequence", first_byte, nbytes);
-            debug!("{:032b}, {} bytes, shift = {}, buffer = {:?}", codepoint, nbytes, 6 * (nbytes - 1), &bytes);
+            debug!("{:032b}, {} bytes, shift = {}, buffer = {:x?}", codepoint, nbytes, 6 * (nbytes - 1), &bytes);
         }
 
         for i in 1..nbytes {
@@ -192,7 +192,7 @@ impl Encoding for Utf8Decode {
                 let shift = 6 * (nbytes - i - 1);
                 codepoint |= ((byte & 0b00111111) as u32) << shift;
                 debug!("{:#x}: continuation byte", byte);
-                debug!("{:032b}, {} bytes, shift = {}, buffer = {:?}", codepoint, nbytes, shift, bytes);
+                debug!("{:032b}, {} bytes, shift = {}, buffer = {:x?}", codepoint, nbytes, shift, bytes);
             }
         }
 
@@ -202,7 +202,7 @@ impl Encoding for Utf8Decode {
                 || (nbytes == 3 && codepoint < 0x800)
                 || (nbytes == 4 && codepoint < 0x1_0000)
                 || nbytes > 4 {
-            warn!("overlong sequence: {:?}", bytes);
+            warn!("overlong sequence: {:x?}", bytes);
             // TODO: raise error here if in strict mode
         }
 
