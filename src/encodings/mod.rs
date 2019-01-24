@@ -33,6 +33,9 @@ pub use self::utf7::*;
 mod utf8;
 pub use self::utf8::*;
 
+mod windows1252;
+pub use self::windows1252::*;
+
 mod utils;
 
 #[derive(Copy, Clone)]
@@ -50,7 +53,7 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 19] = [
+const MAP: [(&'static str, CodeFunctions); 21] = [
     entry!("base64" => Base64Encode),
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
@@ -67,9 +70,11 @@ const MAP: [(&'static str, CodeFunctions); 19] = [
     entry!("un_utf16" => Utf16Decode),
     entry!("un_utf7" => Utf7Decode),
     entry!("un_utf8" => Utf8Decode),
+    entry!("un_windows1252" => Windows1252Decode),
     entry!("utf16" => Utf16Encode),
     entry!("utf7" => Utf7Encode),
     entry!("utf8" => Utf8Encode),
+    entry!("windows1252" => Windows1252Encode),
 ];
 
 fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
