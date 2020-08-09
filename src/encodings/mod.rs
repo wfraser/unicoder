@@ -40,8 +40,8 @@ mod utils;
 
 #[derive(Copy, Clone)]
 pub struct CodeFunctions {
-    pub new: &'static Fn(&str) -> Result<Box<Encoding>, String>,
-    pub print_help: &'static Fn(),
+    pub new: &'static dyn Fn(&str) -> Result<Box<dyn Encoding>, String>,
+    pub print_help: &'static dyn Fn(),
 }
 
 macro_rules! entry {
@@ -53,7 +53,7 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&'static str, CodeFunctions); 21] = [
+const MAP: [(&str, CodeFunctions); 21] = [
     entry!("base64" => Base64Encode),
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
@@ -80,14 +80,14 @@ const MAP: [(&'static str, CodeFunctions); 21] = [
 fn map_lookup(name: &str) -> Result<CodeFunctions, String> {
     let lower = name.to_lowercase();
     for pair in &MAP {
-        if pair.0 == &lower {
+        if pair.0 == lower {
             return Ok(pair.1);
         }
     }
     Err(format!("unknown coding scheme {:?}", name))
 }
 
-pub fn get_encoding(name: &str, options: &str) -> Result<Box<Encoding>, String> {
+pub fn get_encoding(name: &str, options: &str) -> Result<Box<dyn Encoding>, String> {
     match map_lookup(name) {
         Ok(functions) => (functions.new)(options),
         Err(e) => Err(e),
@@ -108,6 +108,6 @@ pub fn print_all_help() {
     for pair in &MAP {
         println!("{}:", pair.0);
         (pair.1.print_help)();
-        println!("");
+        println!();
     }
 }

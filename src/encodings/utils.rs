@@ -1,13 +1,13 @@
-#[allow(needless_range_loop)]
+//#[allow(clippy::needless_range_loop)]
 pub fn u32_from_bytes(bytes: &[u8], big_endian: bool) -> u32 {
     let mut out = 0u32;
-    for i in 0 .. 4 {
+    for (i, byte) in bytes[0..4].iter().enumerate() {
         let shift = if big_endian {
             3 - i
         } else {
             i
         };
-        out |= (bytes[i] as u32) << (8 * shift);
+        out |= (*byte as u32) << (8 * shift);
     }
     out
 }

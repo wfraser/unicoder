@@ -7,7 +7,7 @@ use std::fmt;
 pub struct CodeError {
     message: String,
     bad_bytes: Option<Vec<u8>>,
-    inner: Option<Box<Error>>,
+    inner: Option<Box<dyn Error>>,
     encoding_name: Option<String>,
 }
 
@@ -30,12 +30,12 @@ impl CodeError {
 
     /// Include an inner error that caused this one.
     pub fn with_inner<E: Error + 'static>(mut self, inner: E) -> CodeError {
-        self.inner = Some(Box::new(inner) as Box<Error>);
+        self.inner = Some(Box::new(inner) as Box<dyn Error>);
         self
     }
 
     /// Include an inner error that caused this one.
-    pub fn set_inner(&mut self, inner: Option<Box<Error>>) {
+    pub fn set_inner(&mut self, inner: Option<Box<dyn Error>>) {
         self.inner = inner;
     }
 
@@ -46,25 +46,25 @@ impl CodeError {
 }
 
 impl fmt::Display for CodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "Encoding Error"));
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "Encoding Error")?;
         if let Some(ref name) = self.encoding_name {
-            try!(write!(f, " in {}", name));
+            write!(f, " in {}", name)?;
         }
-        try!(write!(f, ": {}", self.message));
+        write!(f, ": {}", self.message)?;
         if let Some(ref bytes) = self.bad_bytes {
             if bytes.is_empty() {
-                try!(write!(f, " (input: [])"));
+                write!(f, " (input: [])")?;
             } else {
-                try!(write!(f, " (input: [{:02X}", bytes[0]));
+                write!(f, " (input: [{:02X}", bytes[0])?;
                 for byte in bytes.iter().skip(1) {
-                    try!(write!(f, ",{:02X}", byte));
+                    write!(f, ",{:02X}", byte)?;
                 }
-                try!(write!(f, "])"));
+                write!(f, "])")?;
             }
         }
         if let Some(ref e) = self.inner {
-            try!(write!(f, "\ndue to {}", e));
+            write!(f, "\ndue to {}", e)?;
         }
         Ok(())
     }
@@ -75,7 +75,7 @@ impl Error for CodeError {
         "encoding error"
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match self.inner {
             Some(ref innerbox) => Some(innerbox.as_ref()),
             None => None,
@@ -87,19 +87,19 @@ impl Error for CodeError {
 pub trait EncodingStatics {
     /// Make a new instance of the Encoding, with the given options.
     /// Returns the encoding, or an error message if the options given are invalid.
-    fn new(options: &str) -> Result<Box<Encoding>, String>;
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String>;
 
     /// Print some descriptive text about the encoding, including the possible options that can be
     /// given when instantiating it.
     fn print_help();
 }
 
-pub type ByteIterator = Box<Iterator<Item = Result<u8, CodeError>>>;
+pub type ByteIterator = Box<dyn Iterator<Item = Result<u8, CodeError>>>;
 
 /// An encoding scheme.
 pub trait Encoding {
     /// Read from an input and produce the next output, or error.
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>>;
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>>;
 
     /// When an error is encountered, and the error policy is `ErrorPolicy::Replacement`, this is
     /// the data that gets put in the output stream.
@@ -131,7 +131,7 @@ struct BufferedInput {
 impl BufferedInput {
     pub fn new(input: ByteIterator) -> BufferedInput {
         BufferedInput {
-            input: input,
+            input,
             input_buffer: VecDeque::new(),
         }
     }
@@ -141,7 +141,7 @@ impl BufferedInput {
 /// The encodings can work on multiple bytes, but Encoder presents itself as a byte-oriented
 /// iterator by buffering the data internally.
 pub struct Encoder {
-    encoding: Box<Encoding>,
+    encoding: Box<dyn Encoding>,
     encoding_name: String,
     input: BufferedInput,
     output_buffer: VecDeque<u8>,
@@ -152,16 +152,16 @@ pub struct Encoder {
 impl Encoder {
     /// Make a new encoder, using the given byte-oriented iterator as input, and the given
     /// encoding.
-    pub fn new<T: Into<String>>(input: ByteIterator, encoding: Box<Encoding>, enc_name: T,
+    pub fn new<T: Into<String>>(input: ByteIterator, encoding: Box<dyn Encoding>, enc_name: T,
                                 error_policy: ErrorPolicy)
             -> Encoder {
         Encoder {
-            encoding: encoding,
+            encoding,
             encoding_name: enc_name.into(),
             input: BufferedInput::new(input),
             output_buffer: VecDeque::new(),
             stashed_error: None,
-            error_policy: error_policy,
+            error_policy,
         }
     }
 }
@@ -171,7 +171,7 @@ impl Iterator for Encoder {
     fn next(&mut self) -> Option<Result<u8, CodeError>> {
         if self.output_buffer.is_empty() {
             loop {
-                match self.encoding.next(&mut self.input as &mut EncodingInput) {
+                match self.encoding.next(&mut self.input as &mut dyn EncodingInput) {
                     Some(Ok(bytes)) => {
                         self.output_buffer.extend(bytes);
                     },

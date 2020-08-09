@@ -10,9 +10,9 @@ pub struct Base64 {
 impl Base64 {
     fn encode_internal(&self, n: u8) -> u8 {
         match n {
-            0 ... 25 => b'A' + n,
-            26 ... 51 => b'a' + (n - 26),
-            52 ... 61 => b'0' + (n - 52),
+            0 ..= 25 => b'A' + n,
+            26 ..= 51 => b'a' + (n - 26),
+            52 ..= 61 => b'0' + (n - 52),
             62 => self.code62,
             63 => self.code63,
             _ => panic!("out-of-range input to Base64::encode_internal")
@@ -26,9 +26,9 @@ impl Base64 {
             Ok(63)
         } else {
             match n {
-                b'A' ... b'Z' => Ok(n - b'A'),
-                b'a' ... b'z' => Ok(n - b'a' + 26),
-                b'0' ... b'9' => Ok(n - b'0' + 52),
+                b'A' ..= b'Z' => Ok(n - b'A'),
+                b'a' ..= b'z' => Ok(n - b'a' + 26),
+                b'0' ..= b'9' => Ok(n - b'0' + 52),
                 _ => {
                     if self.pad == Some(n) {
                         Err(format!("unexpected pad character {:?}", n as char))
@@ -216,15 +216,14 @@ fn parse_single_byte(s: &str) -> Result<u8, String> {
         Err(format!("argument must be a single character, not {:?}", s))
     } else {
         let c = s.chars().next();
-        if c.is_none() {
-            Err("argument must be a single character, not empty".into())
-        } else {
-            let c = c.unwrap();
+        if let Some(c) = c {
             if (c as u32) > 0xFF {
                 Err(format!("argument needs to fit in a single byte (0-255), not {}", c as u32))
             } else {
                 Ok((c as u32) as u8)
             }
+        } else {
+            Err("argument must be a single character, not empty".into())
         }
     }
 }
@@ -244,7 +243,7 @@ struct ParseResult<'a> {
     leftover_options: Vec<&'a str>,
 }
 
-fn parse_options(options: &str) -> Result<ParseResult, String> {
+fn parse_options(options: &str) -> Result<ParseResult<'_>, String> {
     let mut result = ParseResult {
         code62: b'+',
         code63: b'/',
@@ -254,13 +253,13 @@ fn parse_options(options: &str) -> Result<ParseResult, String> {
     for arg in options.split(',') {
         let parts: Vec<&str> = arg.split('=').collect();
         match parts[0] {
-            "62" => { result.code62 = try!(parse_single_byte(parts[1])); },
-            "63" => { result.code63 = try!(parse_single_byte(parts[1])); },
+            "62" => { result.code62 = parse_single_byte(parts[1])?; },
+            "63" => { result.code63 = parse_single_byte(parts[1])?; },
             "pad" => {
                 result.pad = if parts[1] == "none" {
                     None
                 } else {
-                    Some(try!(parse_single_byte(parts[1])))
+                    Some(parse_single_byte(parts[1])?)
                 };
             },
             _ => {
@@ -272,7 +271,7 @@ fn parse_options(options: &str) -> Result<ParseResult, String> {
 }
 
 impl EncodingStatics for Base64Encode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
         let mut width = Some(64);
 
         let ParseResult {
@@ -280,7 +279,7 @@ impl EncodingStatics for Base64Encode {
             code63,
             pad,
             leftover_options,
-        } = try!(parse_options(options));
+        } = parse_options(options)?;
 
         for arg in leftover_options {
             let parts: Vec<&str> = arg.split('=').collect();
@@ -307,9 +306,9 @@ impl EncodingStatics for Base64Encode {
 
         Ok(Box::new(Base64Encode {
             base64: Base64 {
-                code62: code62,
-                code63: code63,
-                pad: pad,
+                code62,
+                code63,
+                pad,
             },
             line_width: width,
             output_line_width: 0,
@@ -329,7 +328,7 @@ impl EncodingStatics for Base64Encode {
 }
 
 impl Encoding for Base64Encode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut bytes = Vec::<u8>::new();
         for i in 0..3 {
             match input.get_byte() {
@@ -375,13 +374,13 @@ pub struct Base64Decode {
 }
 
 impl EncodingStatics for Base64Decode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
         let ParseResult {
             code62,
             code63,
             pad,
             leftover_options,
-        } = try!(parse_options(options));
+        } = parse_options(options)?;
 
         let mut ignore_garbage = false;
         for arg in leftover_options {
@@ -400,11 +399,11 @@ impl EncodingStatics for Base64Decode {
 
         Ok(Box::new(Base64Decode {
             base64: Base64 {
-                code62: code62,
-                code63: code63,
-                pad: pad,
+                code62,
+                code63,
+                pad,
             },
-            ignore_garbage: ignore_garbage,
+            ignore_garbage,
             stashed_error: None,
         }))
     }
@@ -421,7 +420,7 @@ impl EncodingStatics for Base64Decode {
 }
 
 impl Encoding for Base64Decode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         if let Some(error) = self.stashed_error.take() {
             return Some(Err(error));
         }

@@ -1,10 +1,8 @@
-#![allow(unknown_lints)] // allow Clippy lints to be referenced.
+#![allow(clippy::new_ret_no_self)]
+#![deny(rust_2018_idioms)]
 
 #[macro_use]
 extern crate log;
-extern crate ucd;
-extern crate unicode_names;
-extern crate unicode_normalization;
 
 use std::collections::VecDeque;
 use std::env;
@@ -33,7 +31,7 @@ impl Iterator for StdinCode {
 struct IdentityEncoding;
 
 impl Encoding for IdentityEncoding {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         input.get_bytes(1)
     }
 }
@@ -43,7 +41,7 @@ struct DebugOutput {
 }
 
 impl log::Log for DebugOutput {
-    fn enabled(&self, metadata: &log::Metadata) -> bool {
+    fn enabled(&self, metadata: &log::Metadata<'_>) -> bool {
         if !self.debug_output {
             metadata.level() <= log::Level::Warn
         } else {
@@ -51,7 +49,7 @@ impl log::Log for DebugOutput {
         }
     }
 
-    fn log(&self, record: &log::Record) {
+    fn log(&self, record: &log::Record<'_>) {
         if self.enabled(record.metadata()) {
             println!("{}: {}: {}", record.target(), record.level(), record.args());
         }
@@ -151,7 +149,7 @@ fn main() {
                 if let Err(msg) = print_help(encoding) {
                     println!("{}", msg);
                 }
-                println!("");
+                println!();
             }
         } else {
             println!("usage: {} [options] <encoding[,option,...]>...]", program_name);
@@ -195,7 +193,7 @@ fn main() {
     loop {
         match encoder.next() {
             None => { break; },
-            Some(Ok(byte)) => { io::stdout().write(&[byte]).unwrap(); },
+            Some(Ok(byte)) => { io::stdout().write_all(&[byte]).unwrap(); },
             Some(Err(e)) => {
                 println!("\nError processing input:\n{}", e);
                 println!("terminating.");

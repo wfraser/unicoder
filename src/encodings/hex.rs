@@ -24,7 +24,7 @@ impl HexEncode {
 }
 
 impl EncodingStatics for HexEncode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(HexEncode {
             uppercase: false,
             done: false,
@@ -39,11 +39,11 @@ impl EncodingStatics for HexEncode {
 }
 
 impl Encoding for HexEncode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         match input.get_byte() {
             Some(Ok(byte)) => {
                 let (high, low) = self.hex_chars(byte);
-                Some(Ok(vec![high, low, ' ' as u8]))
+                Some(Ok(vec![high, low, b' ']))
             },
             Some(Err(e)) => Some(Err(e)),
             None => {
@@ -62,7 +62,7 @@ impl Encoding for HexEncode {
 pub struct HexDecode;
 
 impl EncodingStatics for HexDecode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(HexDecode))
     }
 
@@ -73,7 +73,7 @@ impl EncodingStatics for HexDecode {
 }
 
 impl Encoding for HexDecode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut out = 0u8;
         let mut first = true;
 

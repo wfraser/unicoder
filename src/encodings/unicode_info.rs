@@ -5,12 +5,11 @@ use std::char;
 use std::fmt::Debug;
 
 use ucd::*;
-use unicode_names;
 
 pub struct UnicodeInfo;
 
 impl EncodingStatics for UnicodeInfo {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(UnicodeInfo))
     }
 
@@ -39,7 +38,7 @@ fn name<T: Debug>(x: &T) -> String {
 }
 
 impl Encoding for UnicodeInfo {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let bytes = match input.get_bytes(4) {
             Some(Ok(bytes)) => bytes,
             Some(Err(e)) => { return Some(Err(e)); },
@@ -50,9 +49,9 @@ impl Encoding for UnicodeInfo {
         println!("U+{:04X}: {}", codepoint, unicode_name(codepoint));
 
         let c = unsafe { char::from_u32_unchecked(codepoint) };
-        println!("\tblock:    {}", c.block().map(|x| name(&x)).unwrap_or("none".into()));
+        println!("\tblock:    {}", c.block().map(|x| name(&x)).unwrap_or_else(|| "none".into()));
         println!("\tcategory: {}", name(&c.category()));
-        println!("\tscript:   {}", c.script().map(|x| name(&x)).unwrap_or("none".into()));
+        println!("\tscript:   {}", c.script().map(|x| name(&x)).unwrap_or_else(|| "none".into()));
 
         Some(Ok(bytes))
     }
@@ -137,14 +136,14 @@ fn unicode_name(codepoint: u32) -> String {
         0x9F => "APPLICATION PROGRAM COMMAND",
 
         // Surrogates
-        0x00D800 ... 0x00DBFF => "<high surrogate>",
-        0x00DC00 ... 0x00DCFF => "<low surrogate>",
+        0x00D800 ..= 0x00DBFF => "<high surrogate>",
+        0x00DC00 ..= 0x00DCFF => "<low surrogate>",
         // Private use
-        0x00E000 ... 0x00F8FD |                     // Private Use Area
-        0x0F0000 ... 0x0FFFFD |                     // Supplementary Private Use Area-A
-        0x100000 ... 0x10FFFD => "<private use>",   // Supplementary Private Use Area-B
+        0x00E000 ..= 0x00F8FD |                     // Private Use Area
+        0x0F0000 ..= 0x0FFFFD |                     // Supplementary Private Use Area-A
+        0x100000 ..= 0x10FFFD => "<private use>",   // Supplementary Private Use Area-B
         // Non-characters
-        0x00FDD0 ... 0x00FDEF => "<not a character>",
+        0x00FDD0 ..= 0x00FDEF => "<not a character>",
 
         // This is much more often used as a BOM than as a ZWNBSP
         0x00FEFF => "<byte order mark>",

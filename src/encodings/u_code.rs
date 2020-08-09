@@ -7,7 +7,7 @@ use std::io::Write;
 pub struct UCodeDecode;
 
 impl EncodingStatics for UCodeDecode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(UCodeDecode))
     }
 
@@ -50,7 +50,7 @@ fn error(msg: &'static str, bytes: Vec<u8>, error: Option<CodeError>) -> Option<
 }
 
 impl Encoding for UCodeDecode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut codepoint = 0u32;
         let mut bytes = vec![];
 
@@ -134,7 +134,7 @@ impl Encoding for UCodeDecode {
 pub struct UCodeEncode;
 
 impl EncodingStatics for UCodeEncode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(UCodeEncode))
     }
 
@@ -145,7 +145,7 @@ impl EncodingStatics for UCodeEncode {
 }
 
 impl Encoding for UCodeEncode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         match input.get_bytes(4) {
             Some(Ok(bytes)) => {
                 let codepoint = utils::u32_from_bytes(&bytes, true);

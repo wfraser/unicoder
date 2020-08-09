@@ -19,7 +19,7 @@ enum NormalizationForm {
 }
 
 impl EncodingStatics for Normalize {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
         let form = match options {
             "nfd" => NormalizationForm::NFD,
             "nfkd" => NormalizationForm::NFKD,
@@ -30,9 +30,7 @@ impl EncodingStatics for Normalize {
             }
         };
 
-        Ok(Box::new(Normalize {
-            form: form
-        }))
+        Ok(Box::new(Normalize { form }))
     }
 
     fn print_help() {
@@ -61,7 +59,7 @@ fn codepoints_string(slice: &[char]) -> String {
 }
 
 impl Encoding for Normalize {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut input_buffer = Vec::<u8>::new();
         let mut chars = Vec::<char>::new();
         loop {

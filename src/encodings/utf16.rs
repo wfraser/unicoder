@@ -6,7 +6,7 @@ pub struct Utf16Encode {
 }
 
 impl EncodingStatics for Utf16Encode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
         let mut big_endian = false;
         match options {
             "" | "le" => (),
@@ -14,9 +14,7 @@ impl EncodingStatics for Utf16Encode {
             _ =>  { return Err("invalid options".into()); },
         }
 
-        Ok(Box::new(Utf16Encode {
-            big_endian: big_endian,
-        }))
+        Ok(Box::new(Utf16Encode { big_endian }))
     }
 
     fn print_help() {
@@ -70,7 +68,7 @@ impl Utf16Encode {
 }
 
 impl Encoding for Utf16Encode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         match input.get_bytes(4) {
             Some(Ok(bytes)) => {
                 let codepoint = utils::u32_from_bytes(&bytes, true);
@@ -91,7 +89,7 @@ pub struct Utf16Decode {
 }
 
 impl EncodingStatics for Utf16Decode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
         let mut big_endian = false;
         match options {
             "" | "le" => (),
@@ -99,9 +97,7 @@ impl EncodingStatics for Utf16Decode {
             _ =>  { return Err("invalid options".into()); },
         }
 
-        Ok(Box::new(Utf16Decode {
-            big_endian: big_endian,
-        }))
+        Ok(Box::new(Utf16Decode { big_endian }))
     }
 
     fn print_help() {
@@ -113,7 +109,7 @@ impl EncodingStatics for Utf16Decode {
 }
 
 impl Utf16Decode {
-    fn read_codeunit(&self, input: &mut EncodingInput, bytes: &mut Vec<u8>)
+    fn read_codeunit(&self, input: &mut dyn EncodingInput, bytes: &mut Vec<u8>)
             -> Option<Result<u16, CodeError>> {
         let mut codeunit = 0u16;
         for i in 0..2 {
@@ -168,7 +164,7 @@ pub fn low_surrogate(codeunit: u16) -> Option<u32> {
 }
 
 impl Encoding for Utf16Decode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut bytes = vec![];
 
         let first_codeunit = match self.read_codeunit(input, &mut bytes) {

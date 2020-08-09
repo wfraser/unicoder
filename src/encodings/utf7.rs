@@ -24,7 +24,7 @@ enum Mode {
 }
 
 impl EncodingStatics for Utf7Encode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Utf7Encode {
             mode: Mode::Direct,
             output_buffer: Vec::new(),
@@ -50,8 +50,8 @@ impl Utf7Encode {
 }
 
 impl Encoding for Utf7Encode {
-    #[allow(match_overlapping_arm, match_same_arms)]
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    #[allow(clippy::match_overlapping_arm, clippy::match_same_arms)]
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut out = vec![];
         loop {
             let bytes: Vec<u8>;
@@ -68,7 +68,7 @@ impl Encoding for Utf7Encode {
             let direct_encoding = if codepoint < 0x80 {
                 match codepoint as u8 {
                     b'+' | b'\\' | b'~' => None,
-                    b' ' | b'\t' | b'\r' | b'\n' | 33 ... 125 => Some(codepoint as u8),
+                    b' ' | b'\t' | b'\r' | b'\n' | 33 ..= 125 => Some(codepoint as u8),
                     _ => None,
                 }
             } else {
@@ -111,7 +111,7 @@ pub struct Utf7Decode {
 }
 
 impl EncodingStatics for Utf7Decode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Utf7Decode {
             mode: Mode::Direct,
             base64: modified_base64(),
@@ -125,8 +125,8 @@ impl EncodingStatics for Utf7Decode {
 }
 
 impl Encoding for Utf7Decode {
-    #[allow(cyclomatic_complexity)] // yeah I know
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    //#[allow(cyclomatic_complexity)] // yeah I know
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         loop {
             match self.mode {
                 Mode::Direct => {
@@ -167,7 +167,7 @@ impl Encoding for Utf7Decode {
                         };
 
                         match byte {
-                            b'A' ... b'Z' | b'a' ... b'z' | b'0' ... b'9' | b'+' | b'/' => {
+                            b'A' ..= b'Z' | b'a' ..= b'z' | b'0' ..= b'9' | b'+' | b'/' => {
                                 // valid modified-base64 input
                                 debug!("buffering {:?}", byte as char);
                                 input_buffer.push(byte);

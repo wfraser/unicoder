@@ -3,7 +3,7 @@ use super::super::encoding::*;
 pub struct Null;
 
 impl EncodingStatics for Null {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Null))
     }
 
@@ -14,7 +14,7 @@ impl EncodingStatics for Null {
 }
 
 impl Encoding for Null {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         while let Some(result) = input.get_byte() {
             if let Err(e) = result {
                 return Some(Err(e));

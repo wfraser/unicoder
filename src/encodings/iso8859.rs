@@ -85,7 +85,7 @@ const MAPPING_15: [(u8, u32); 8] = [
     (0xB8, 0x017E), (0xBC, 0x0152), (0xBD, 0x0153), (0xBE, 0x0178)
 ];
 
-const MAPPINGS: [&'static [u32]; 16] = [
+const MAPPINGS: [&[u32]; 16] = [
     &MAPPING_NULL,  // 1 - Latin-1 Western European
     &MAPPING_2,     // 2 - Latin-2 Central European
     &MAPPING_3,     // 3 - Latin-3 South European
@@ -119,10 +119,10 @@ fn part_number(s: &str) -> Result<u8, String> {
 }
 
 impl EncodingStatics for Iso8859Encode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
-        let part = try!(part_number(options));
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
+        let part = part_number(options)?;
         Ok(Box::new(Iso8859Encode {
-            part: part,
+            part,
         }))
     }
 
@@ -143,7 +143,7 @@ impl Iso8859Encode {
 }
 
 impl Encoding for Iso8859Encode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let bytes: Vec<u8>;
         let codepoint = match input.get_bytes(4) {
             Some(Ok(read)) => {
@@ -195,11 +195,9 @@ pub struct Iso8859Decode {
 }
 
 impl EncodingStatics for Iso8859Decode {
-    fn new(options: &str) -> Result<Box<Encoding>, String> {
-        let part = try!(part_number(options));
-        Ok(Box::new(Iso8859Decode {
-            part: part,
-        }))
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
+        let part = part_number(options)?;
+        Ok(Box::new(Iso8859Decode { part }))
     }
 
     fn print_help() {
@@ -210,7 +208,7 @@ impl EncodingStatics for Iso8859Decode {
 }
 
 impl Encoding for Iso8859Decode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let byte = match input.get_byte() {
             Some(Ok(byte)) => byte,
             Some(Err(e)) => { return Some(Err(e)); },

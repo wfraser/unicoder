@@ -6,7 +6,7 @@ use std::error::Error;
 pub struct Utf8Encode;
 
 impl EncodingStatics for Utf8Encode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Utf8Encode))
     }
 
@@ -17,7 +17,7 @@ impl EncodingStatics for Utf8Encode {
 }
 
 impl Encoding for Utf8Encode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let bytes: Vec<u8>;
         let codepoint = match input.get_bytes(4) {
             Some(Ok(bytes_read)) => {
@@ -88,7 +88,7 @@ impl Encoding for Utf8Encode {
 pub struct Utf8Decode;
 
 impl EncodingStatics for Utf8Decode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Utf8Decode))
     }
 
@@ -101,7 +101,7 @@ impl EncodingStatics for Utf8Decode {
     }
 }
 
-fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<Error>>)
+fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<dyn Error>>)
         -> Option<Result<Vec<u8>, CodeError>> {
     let last_byte = *bytes.last().unwrap();
     let mut msg = format!("incomplete multi-byte code point: expected {} bytes, only got {}", nbytes, bytes.len() - 1);
@@ -121,7 +121,7 @@ fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<Error>>)
 }
 
 impl Encoding for Utf8Decode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let mut bytes = vec![];
 
         let first_byte = match input.get_byte() {

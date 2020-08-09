@@ -16,7 +16,7 @@ const MAPPING: [u32; 32] = [
 pub struct Windows1252Encode;
 
 impl EncodingStatics for Windows1252Encode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Windows1252Encode))
     }
 
@@ -35,7 +35,7 @@ impl Windows1252Encode {
 }
 
 impl Encoding for Windows1252Encode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let codepoint = match input.get_bytes(4) {
             Some(Ok(read)) => {
                 utils::u32_from_bytes(&read, true)
@@ -66,7 +66,7 @@ impl Encoding for Windows1252Encode {
 pub struct Windows1252Decode;
 
 impl EncodingStatics for Windows1252Decode {
-    fn new(_options: &str) -> Result<Box<Encoding>, String> {
+    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
         Ok(Box::new(Windows1252Decode))
     }
 
@@ -77,7 +77,7 @@ impl EncodingStatics for Windows1252Decode {
 }
 
 impl Encoding for Windows1252Decode {
-    fn next(&mut self, input: &mut EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
+    fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let byte = match input.get_byte() {
             Some(Ok(byte)) => byte,
             Some(Err(e)) => { return Some(Err(e)); }
