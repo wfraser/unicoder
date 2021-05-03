@@ -32,9 +32,9 @@ impl Encoding for Utf8Encode {
         // These ranges are illegal in Unicode, but UTF-8 can technically encode them just fine.
         if codepoint > 0x10FFFF {
             warn!("code point out of Unicode range: U+{:X}", codepoint);
-        } else if codepoint >= 0xD800 && codepoint <= 0xDBFF {
+        } else if (0xD800..=0xDBFF).contains(&codepoint) {
             warn!("high surrogate code point U+{:X} is illegal in UTF-8", codepoint);
-        } else if codepoint >= 0xDC00 && codepoint <= 0xDFFF {
+        } else if (0xDC00..=0xDFFF).contains(&codepoint) {
             warn!("low surrogate code point U+{:X} is illegal in UTF-8", codepoint);
         }
 
@@ -101,6 +101,7 @@ impl EncodingStatics for Utf8Decode {
     }
 }
 
+#[allow(clippy::unnecessary_wraps)] // wraps are delicious
 fn incomplete_error(nbytes: u8, bytes: Vec<u8>, error: Option<Box<dyn Error>>)
         -> Option<Result<Vec<u8>, CodeError>> {
     let last_byte = *bytes.last().unwrap();
@@ -183,7 +184,7 @@ impl Encoding for Utf8Decode {
             };
             bytes.push(byte);
 
-            if byte < 0b10000000 || byte >= 0b11000000 {
+            if (0b1000_0000..=0b1100_0000).contains(&byte) {
                 // unexpected single-byte or initial byte
                 input.unget_byte(byte);
                 return incomplete_error(nbytes, bytes, None);

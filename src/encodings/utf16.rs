@@ -33,7 +33,7 @@ impl Utf16Encode {
         // The names are because the "low" surrogate encodes the 10 low-order bits of the code
         // point, and the "high" surrogate encodes the 10 high-order bits.
 
-        if codepoint >= 0xD800 && codepoint <= 0xDFFF {
+        if (0xD800..=0xDFFF).contains(&codepoint) {
             // Forbidden range.
             let which = if codepoint < 0xDC00 {
                 "low"
@@ -147,7 +147,7 @@ impl Utf16Decode {
 
 /// Returns the surrogate value shifted appropriately if it is a high surrogate, or else None.
 pub fn high_surrogate(codeunit: u16) -> Option<u32> {
-    if codeunit >= 0xD800 && codeunit <= 0xDBFF {
+    if (0xD800..=0xDBFF).contains(&codeunit) {
         Some(((codeunit - 0xD800) as u32) << 10)
     } else {
         None
@@ -156,7 +156,7 @@ pub fn high_surrogate(codeunit: u16) -> Option<u32> {
 
 /// Returns the surrogate value shifted appropriately if it is a low surrogate, or else None.
 pub fn low_surrogate(codeunit: u16) -> Option<u32> {
-    if codeunit >= 0xDC00 && codeunit <= 0xDFFF {
+    if (0xDC00..=0xDFFF).contains(&codeunit) {
         Some((codeunit - 0xDC00) as u32)
     } else {
         None

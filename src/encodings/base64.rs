@@ -432,9 +432,9 @@ impl Encoding for Base64Decode {
                     if byte == b'\r' || byte == b'\n' {
                         // Ignore line endings no matter what our ignore_garbage setting says.
                         continue;
-                    } else if (byte >= b'A' && byte <= b'Z')
-                            || (byte >= b'a' && byte <= b'z')
-                            || (byte >= b'0' && byte <= b'9')
+                    } else if (b'A'..=b'Z').contains(&byte)
+                            || (b'a'..=b'z').contains(&byte)
+                            || (b'0'..=b'9').contains(&byte)
                             || byte == self.base64.code62
                             || byte == self.base64.code63
                             || self.base64.pad == Some(byte) {

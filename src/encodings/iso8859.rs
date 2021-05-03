@@ -135,6 +135,7 @@ impl EncodingStatics for Iso8859Encode {
 }
 
 impl Iso8859Encode {
+    #[allow(clippy::unnecessary_wraps)] // wraps are delicious
     fn unmapped(&self, codepoint: u32) -> Option<Result<Vec<u8>, CodeError>> {
         warn!("cannot map Unicode code point U+{:04X} into ISO 8859-{}",
               codepoint, self.part);

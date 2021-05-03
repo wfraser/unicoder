@@ -18,17 +18,18 @@ impl EncodingStatics for UCodeDecode {
 }
 
 fn hex_digit_value(c: u8) -> Option<u8> {
-    if c >= b'0' && c <= b'9' {
+    if (b'0'..=b'9').contains(&c) {
         Some(c - b'0')
-    } else if c >= b'a' && c <= b'f' {
+    } else if (b'a'..=b'f').contains(&c) {
         Some(c - b'a' + 10)
-    } else if c >= b'A' && c <= b'F' {
+    } else if (b'A'..=b'F').contains(&c) {
         Some(c - b'A' + 10)
     } else {
         None
     }
 }
 
+#[allow(clippy::unnecessary_wraps)] // wraps are delicious
 fn unexpected(bytes: Vec<u8>, expected: Option<&'static str>) -> Option<Result<Vec<u8>, CodeError>> {
     let mut msg = format!("unexpected {:?}", *bytes.last().unwrap() as char);
     if let Some(expected) = expected {
@@ -39,6 +40,7 @@ fn unexpected(bytes: Vec<u8>, expected: Option<&'static str>) -> Option<Result<V
     Some(Err(CodeError::new(msg).with_bytes(bytes)))
 }
 
+#[allow(clippy::unnecessary_wraps)] // wraps are delicious
 fn error(msg: &'static str, bytes: Vec<u8>, error: Option<CodeError>) -> Option<Result<Vec<u8>, CodeError>> {
     if let Some(error) = error {
         error!("{} while reading U+ code: {}", msg, error);

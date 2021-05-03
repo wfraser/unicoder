@@ -1,49 +1,38 @@
-//#[allow(clippy::needless_range_loop)]
+use std::convert::TryInto;
+
 pub fn u32_from_bytes(bytes: &[u8], big_endian: bool) -> u32 {
-    let mut out = 0u32;
-    for (i, byte) in bytes[0..4].iter().enumerate() {
-        let shift = if big_endian {
-            3 - i
-        } else {
-            i
-        };
-        out |= (*byte as u32) << (8 * shift);
+    let arr = bytes.split_at(4).0.try_into().expect("not enough bytes");
+    if big_endian {
+        u32::from_be_bytes(arr)
+    } else {
+        u32::from_le_bytes(arr)
     }
-    out
 }
 
 pub fn u32_to_bytes(input: u32, big_endian: bool) -> Vec<u8> {
-    let mut out = Vec::with_capacity(4);
-    for i in 0 .. 4 {
-        let shift = if big_endian {
-            3 - i
-        } else {
-            i
-        };
-        out.push((input >> (8 * shift)) as u8);
-    }
-    out
+    let arr = if big_endian {
+        input.to_be_bytes()
+    } else {
+        input.to_le_bytes()
+    };
+    arr.to_vec()
 }
 
 pub fn u16_to_bytes(input: u16, big_endian: bool) -> Vec<u8> {
-    let mut out = Vec::with_capacity(2);
-    let hi = (input >> 8) as u8;
-    let lo = input as u8;
-    if big_endian {
-        out.push(hi);
-        out.push(lo);
+    let arr = if big_endian {
+        input.to_be_bytes()
     } else {
-        out.push(lo);
-        out.push(hi);
-    }
-    out
+        input.to_le_bytes()
+    };
+    arr.to_vec()
 }
 
 pub fn u16_from_bytes(bytes: &[u8], big_endian: bool) -> u16 {
+    let arr = bytes.split_at(2).0.try_into().expect("not enough bytes");
     if big_endian {
-        ((bytes[0] as u16) << 8) | (bytes[1] as u16)
+        u16::from_be_bytes(arr)
     } else {
-        ((bytes[1] as u16) << 8) | (bytes[0] as u16)
+        u16::from_le_bytes(arr)
     }
 }
 

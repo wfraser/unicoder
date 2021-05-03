@@ -121,9 +121,8 @@ fn main() {
                 list = true;
             } else if arg == "--help" {
                 help = true;
-            } else if arg.starts_with("--errors=") {
-                error_policy = parse_error_policy(&arg["--errors=".len()..])
-                        .unwrap_or_else(|| {
+            } else if let Some(s) = arg.strip_prefix("--errors=") {
+                error_policy = parse_error_policy(s).unwrap_or_else(|| {
                     println!("invalid error policy");
                     process::exit(-1);
                 });

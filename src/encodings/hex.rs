@@ -84,11 +84,11 @@ impl Encoding for HexDecode {
                     let value = if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
                         // skip whitespace
                         continue;
-                    } else if c >= '0' && c <= '9' {
+                    } else if ('0'..='9').contains(&c) {
                         byte - b'0'
-                    } else if c >= 'a' && c <= 'f' {
+                    } else if ('a'..='f').contains(&c) {
                         byte - b'a' + 10
-                    } else if c >= 'A' && c <= 'F' {
+                    } else if ('A'..='F').contains(&c) {
                         byte - b'A' + 10
                     } else {
                         error!("out of range: {:?}", c);

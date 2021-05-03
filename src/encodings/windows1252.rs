@@ -27,13 +27,6 @@ impl EncodingStatics for Windows1252Encode {
     }
 }
 
-impl Windows1252Encode {
-    fn unmapped(&self, codepoint: u32) -> Option<Result<Vec<u8>, CodeError>> {
-        warn!("cannot map Unicode code point U+{:04X} into Windows 1252", codepoint);
-        Some(Ok(vec![REPLACEMENT]))
-    }
-}
-
 impl Encoding for Windows1252Encode {
     fn next(&mut self, input: &mut dyn EncodingInput) -> Option<Result<Vec<u8>, CodeError>> {
         let codepoint = match input.get_bytes(4) {
@@ -44,14 +37,17 @@ impl Encoding for Windows1252Encode {
             None => { return None; },
         };
 
-        if codepoint < 0x80 || codepoint >= 0xA0 && codepoint <= 0xFF {
+        if codepoint < 0x80 || (0xA0..=0xFF).contains(&codepoint) {
             debug!("U+{:04X} identity mapping", codepoint);
             return Some(Ok(vec![codepoint as u8]));
         }
 
         let mapped = match MAPPING.iter().enumerate().find(|&(_idx, from)| *from == codepoint) {
             Some((idx, _from)) => 0x80 + (idx as u8),
-            None => { return self.unmapped(codepoint); }
+            None => {
+                warn!("cannot map Unicode code point U+{:04X} into Windows 1252", codepoint);
+                return Some(Ok(vec![REPLACEMENT]));
+            }
         };
 
         debug!("U+{:04X} maps to {:#04X}", codepoint, mapped);
@@ -84,7 +80,7 @@ impl Encoding for Windows1252Decode {
             None => { return None; }
         };
 
-        if byte < 0x80 || byte >= 0xA0 {
+        if !(0x80..0xA0).contains(&byte) {
             debug!("U+{:04X} identity encoding", byte);
             return Some(Ok(utils::u32_to_bytes(byte as u32, true)));
         }

@@ -156,7 +156,7 @@ fn unicode_name(codepoint: u32) -> String {
         _ => ""
     };
 
-    if alt_name != "" {
+    if !alt_name.is_empty() {
         return alt_name.to_string();
     }
 
