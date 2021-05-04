@@ -184,7 +184,7 @@ impl Encoding for Utf8Decode {
             };
             bytes.push(byte);
 
-            if (0b1000_0000..=0b1100_0000).contains(&byte) {
+            if !(0b1000_0000..=0b1100_0000).contains(&byte) {
                 // unexpected single-byte or initial byte
                 input.unget_byte(byte);
                 return incomplete_error(nbytes, bytes, None);
