@@ -40,17 +40,26 @@ const MAPPING: [u32; 256] = [
     0x00B0, 0x2219, 0x00B7, 0x221A, 0x207F, 0x00B2, 0x25A0, 0x00A0, // F
 ];
 
-pub struct Cp437Encode;
+pub struct Cp437Encode {
+    newlines: bool,
+}
 
 impl EncodingStatics for Cp437Encode {
-    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
-        Ok(Box::new(Cp437Encode))
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
+        let newlines = match options {
+            "" => true,
+            "nonl" => false,
+            _ => return Err("unrecognized option".into()),
+        };
+        Ok(Box::new(Cp437Encode { newlines }))
     }
 
     fn print_help() {
         println!("Encodes character data as Codepage 437 (aka IBM437)");
         println!("Un-mapped characters raise a warning and are replaced with '?'.");
-        println!("(no options)");
+        println!("Caveat: many CP437 characters had multiple uses; this mapping is somewhat arbitrary.");
+        println!("options:");
+        println!("  nonl: encode U+000A as inverted white circle and U+000D as music note, instead of LF and CR");
     }
 }
 
@@ -63,6 +72,11 @@ impl Encoding for Cp437Encode {
             Some(Err(e)) => { return Some(Err(e)); }
             None => { return None; }
         };
+
+        if self.newlines && (codepoint == 0x0A || codepoint == 0x0D) {
+            debug!("preserving {}", if codepoint == 0x0A { "LF" } else { "CR" });
+            return Some(Ok(vec![codepoint as u8]));
+        }
 
         if MAPPING.get(codepoint as usize) == Some(&SAME) {
             debug!("U+{:04X} identity mapping", codepoint);
@@ -86,16 +100,25 @@ impl Encoding for Cp437Encode {
     }
 }
 
-pub struct Cp437Decode;
+pub struct Cp437Decode {
+    newlines: bool,
+}
 
 impl EncodingStatics for Cp437Decode {
-    fn new(_options: &str) -> Result<Box<dyn Encoding>, String> {
-        Ok(Box::new(Cp437Decode))
+    fn new(options: &str) -> Result<Box<dyn Encoding>, String> {
+        let newlines = match options {
+            "" => true,
+            "nonl" => false,
+            _ => return Err("unrecognized option".into()),
+        };
+        Ok(Box::new(Cp437Decode { newlines }))
     }
 
     fn print_help() {
         println!("Decodes Codepage 437 (aka IBM437) into character data.");
-        println!("(no options)");
+        println!("Caveat: many CP437 characters had multiple uses; this mapping is somewhat arbitrary.");
+        println!("options:");
+        println!("  nonl: interpret 0A as inverted white circle and 0D as music note, instead of LF and CR");
     }
 }
 
@@ -108,7 +131,10 @@ impl Encoding for Cp437Decode {
         };
 
         let mut codepoint = MAPPING[byte as usize];
-        if codepoint == SAME {
+        if self.newlines && (byte == b'\n' || byte == b'\r') {
+            debug!("preserving {}", if byte == b'\n' { "LF" } else { "CR" });
+            codepoint = byte as u32;
+        } else if codepoint == SAME {
             debug!("U+{:04X} identity encoding", byte);
             codepoint = byte as u32;
         } else {
