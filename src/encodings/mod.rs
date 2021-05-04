@@ -3,6 +3,9 @@ use super::encoding::*;
 mod base64;
 pub use self::base64::*;
 
+mod cp437;
+pub use self::cp437::*;
+
 mod hex;
 pub use self::hex::*;
 
@@ -53,8 +56,9 @@ macro_rules! entry {
     }
 }
 
-const MAP: [(&str, CodeFunctions); 21] = [
+const MAP: [(&str, CodeFunctions); 23] = [
     entry!("base64" => Base64Encode),
+    entry!("cp437" => Cp437Encode),
     entry!("hex" => HexEncode),
     entry!("iso8859" => Iso8859Encode),
     entry!("normalize" => Normalize),
@@ -63,6 +67,7 @@ const MAP: [(&str, CodeFunctions); 21] = [
     entry!("ucode" => UCodeEncode),
     entry!("unicode_info" => UnicodeInfo),
     entry!("un_base64" => Base64Decode),
+    entry!("un_cp437" => Cp437Decode),
     entry!("un_hex" => HexDecode),
     entry!("un_iso8859" => Iso8859Decode),
     entry!("un_shift_jis" => ShiftJISDecode),
